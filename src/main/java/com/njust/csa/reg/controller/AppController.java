@@ -22,4 +22,10 @@ public class AppController {
     public String getActivities(){
         return appService.getActivities();
     }
+
+    @RequestMapping(value = "/activity/{id}", method = RequestMethod.GET,
+            produces = "application/json;charset=UTF-8")
+    public String getActivityStructure(@PathVariable long id){
+        return appService.getActivityStructure(id);
+    }
 }
