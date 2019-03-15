@@ -1,9 +1,6 @@
 package com.njust.csa.reg.repository.entities;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.util.Objects;
 
 @Entity
@@ -15,8 +12,9 @@ public class ApplicantInfoViewEntity {
     private String type;
     private String applicantValue;
     private int applicantNumber;
+    private long id;
 
-    @Basic
+
     @Column(name = "table_id", nullable = false)
     public long getTableId() {
         return tableId;
@@ -86,11 +84,22 @@ public class ApplicantInfoViewEntity {
                 applicantNumber == that.applicantNumber &&
                 Objects.equals(title, that.title) &&
                 Objects.equals(type, that.type) &&
-                Objects.equals(applicantValue, that.applicantValue);
+                Objects.equals(applicantValue, that.applicantValue) &&
+                Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableId, questionIndex, title, type, applicantValue, applicantNumber);
+        return Objects.hash(id, tableId, questionIndex, title, type, applicantValue, applicantNumber);
+    }
+
+    @Id
+    @Column(name = "id", nullable = false)
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 }

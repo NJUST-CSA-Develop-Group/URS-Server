@@ -1,10 +1,15 @@
 package com.njust.csa.reg.repository.entities;
 
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.Objects;
 
 @Entity
+@EntityListeners(AuditingEntityListener.class) //启动自动生成时间
 @Table(name = "user", schema = "online_reg_sys", catalog = "")
 public class UserEntity {
     private long id;
@@ -16,6 +21,7 @@ public class UserEntity {
 
     @Id
     @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     public long getId() {
         return id;
     }
@@ -25,6 +31,7 @@ public class UserEntity {
     }
 
     @Basic
+    @CreatedDate
     @Column(name = "gmt_create", nullable = false)
     public Timestamp getGmtCreate() {
         return gmtCreate;
@@ -35,6 +42,7 @@ public class UserEntity {
     }
 
     @Basic
+    @LastModifiedDate
     @Column(name = "gmt_modified", nullable = false)
     public Timestamp getGmtModified() {
         return gmtModified;

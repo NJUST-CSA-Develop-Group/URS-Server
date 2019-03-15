@@ -26,6 +26,7 @@ public class TableStructureEntity {
     private String cases;
     private String range;
     private Long belongsTo;
+    private byte isShow;
 
     @Id
     @Column(name = "id", nullable = false)
@@ -188,11 +189,22 @@ public class TableStructureEntity {
                 Objects.equals(description, that.description) &&
                 Objects.equals(cases, that.cases) &&
                 Objects.equals(range, that.range) &&
-                Objects.equals(belongsTo, that.belongsTo);
+                Objects.equals(belongsTo, that.belongsTo) &&
+                Objects.equals(isShow, that.isShow);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, gmtCreate, gmtModified, tableId, index, title, type, isRequired, defaultValue, tips, description, cases, range, belongsTo);
+        return Objects.hash(id, gmtCreate, gmtModified, tableId, index, title, type, isRequired, defaultValue, tips, description, cases, range, isShow, belongsTo);
+    }
+
+    @Basic
+    @Column(name = "is_show", nullable = false)
+    public byte getIsShow() {
+        return isShow;
+    }
+
+    public void setIsShow(byte isShow) {
+        this.isShow = isShow;
     }
 }

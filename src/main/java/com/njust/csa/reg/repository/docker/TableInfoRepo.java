@@ -3,6 +3,6 @@ package com.njust.csa.reg.repository.docker;
 import com.njust.csa.reg.repository.entities.TableInfoEntity;
 import org.springframework.data.repository.CrudRepository;
 
-public interface TableInfoRepo extends CrudRepository<TableInfoEntity, Integer> {
+public interface TableInfoRepo extends CrudRepository<TableInfoEntity, Long> {
 
 }

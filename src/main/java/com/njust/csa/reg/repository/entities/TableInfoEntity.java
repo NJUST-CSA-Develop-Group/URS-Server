@@ -19,6 +19,7 @@ public class TableInfoEntity {
     private long publisher;
     private Timestamp startTime;
     private Timestamp endTime;
+    private String status;
 
     @Id
     @Column(name = "id", nullable = false)
@@ -104,11 +105,22 @@ public class TableInfoEntity {
                 Objects.equals(gmtModified, that.gmtModified) &&
                 Objects.equals(title, that.title) &&
                 Objects.equals(startTime, that.startTime) &&
-                Objects.equals(endTime, that.endTime);
+                Objects.equals(endTime, that.endTime) &&
+                Objects.equals(status, that.status);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, gmtCreate, gmtModified, title, publisher, startTime, endTime);
+        return Objects.hash(id, gmtCreate, gmtModified, title, publisher, startTime, endTime, status);
+    }
+
+    @Basic
+    @Column(name = "status", nullable = false, length = 10)
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
