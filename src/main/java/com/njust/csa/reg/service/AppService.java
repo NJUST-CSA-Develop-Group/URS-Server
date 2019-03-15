@@ -1,8 +1,9 @@
 package com.njust.csa.reg.service;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
+import com.njust.csa.reg.repository.docker.ApplicantInfoRepo;
 import com.njust.csa.reg.repository.docker.TableInfoRepo;
 import com.njust.csa.reg.repository.docker.TableStructureRepo;
+import com.njust.csa.reg.repository.entities.ApplicantInfoEntity;
 import com.njust.csa.reg.repository.entities.TableInfoEntity;
 import com.njust.csa.reg.repository.entities.TableStructureEntity;
 import com.njust.csa.reg.util.FailureBuilder;
@@ -11,20 +12,23 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.text.SimpleDateFormat;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class AppService {
     private final TableInfoRepo tableInfoRepo;
     private final TableStructureRepo tableStructureRepo;
+    private final ApplicantInfoRepo applicantInfoRepo;
 
     @Autowired
-    public AppService(TableInfoRepo tableInfoRepo, TableStructureRepo tableStructureRepo) {
+    public AppService(TableInfoRepo tableInfoRepo, TableStructureRepo tableStructureRepo,
+                      ApplicantInfoRepo applicantInfoRepo) {
         this.tableInfoRepo = tableInfoRepo;
         this.tableStructureRepo = tableStructureRepo;
+        this.applicantInfoRepo = applicantInfoRepo;
     }
 
     //获取所有报名信息
@@ -56,6 +60,27 @@ public class AppService {
             }
         }
         return responseJson.toString();
+    }
+
+    @Transactional
+    public String putApplicantInfo(long tableId, JSONObject applicantInfo){
+        List<ApplicantInfoEntity> applicantInfoEntities = new ArrayList<>();
+        List<TableStructureEntity> tableStructures =
+                tableStructureRepo.findAllByTableIdAndBelongsToOrderByIndex(tableId, null);
+        int newApplicantNum = applicantInfoRepo.countByBelongsToStructureId(tableStructures.get(0).getId()) + 1;
+        for (TableStructureEntity structure : tableStructures) {
+            try{
+                applicantInfoEntities.addAll(generateApplicantInfo(structure, newApplicantNum, applicantInfo));
+            }catch (IllegalArgumentException e){
+                System.out.println(e.getMessage());
+                return FailureBuilder.buildFailureMessage("数据库存储错误：" + e.getMessage());
+            }
+        }
+
+        for (ApplicantInfoEntity applicantInfoEntity : applicantInfoEntities) {
+            applicantInfoRepo.save(applicantInfoEntity);
+        }
+        return new JSONObject().put("success", true).toString();
     }
 
     private JSONObject generateTableStructure(TableStructureEntity tableStructure) {
@@ -100,5 +125,55 @@ public class AppService {
         }
 
         return structureJson;
+    }
+
+    private List<ApplicantInfoEntity> generateApplicantInfo(TableStructureEntity tableStructure, int applicantNum, JSONObject value)
+        throws IllegalArgumentException{
+        List<ApplicantInfoEntity> applicantInfoEntities = new ArrayList<>();
+
+        if(tableStructure.getType().equals("group")){
+            List<TableStructureEntity> groupItems =
+                    tableStructureRepo.findAllByTableIdAndBelongsToOrderByIndex(tableStructure.getTableId(),
+                            tableStructure.getId());
+            JSONObject groupJson = value.isNull(tableStructure.getTitle()) ?
+                    null : value.getJSONObject(tableStructure.getTitle());
+
+            if(groupJson == null){
+                if(tableStructure.getIsRequired() == (byte)1){
+                    throw new IllegalArgumentException("获取不到字段：" + tableStructure.getTitle());
+                }
+            }
+            else{
+
+                for (TableStructureEntity groupItem : groupItems) {
+                    applicantInfoEntities.addAll(generateApplicantInfo(groupItem, applicantNum, groupJson));
+                }
+            }
+        }
+        else{
+            ApplicantInfoEntity newInfo = new ApplicantInfoEntity();
+            newInfo.setApplicantNumber(applicantNum);
+            newInfo.setBelongsToStructureId(tableStructure.getId());
+
+            String info = value.isNull(tableStructure.getTitle()) ? null : value.getString(tableStructure.getTitle());
+
+            if(info == null){
+                if(tableStructure.getIsRequired() == (byte)1){
+                    throw new IllegalArgumentException("获取不到字段：" + tableStructure.getTitle());
+                }
+            }
+
+            else if(tableStructure.getIsUnique() == (byte)1){
+                if(applicantInfoRepo.existsByBelongsToStructureIdAndValue(tableStructure.getId(), info)){
+                    throw new IllegalArgumentException("字段重复：" + tableStructure.getTitle());
+                }
+            }
+
+            else{
+                newInfo.setValue(info);
+            }
+            applicantInfoEntities.add(newInfo);
+        }
+        return applicantInfoEntities;
     }
 }

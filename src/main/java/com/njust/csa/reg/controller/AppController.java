@@ -6,7 +6,6 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
 
 @RestController
 public class AppController {
@@ -27,5 +26,15 @@ public class AppController {
             produces = "application/json;charset=UTF-8")
     public String getActivityStructure(@PathVariable long id){
         return appService.getActivityStructure(id);
+    }
+
+    @RequestMapping(value = "/activity/{id}", method = RequestMethod.POST,
+            produces = "application/json;charset=UTF-8")
+    public String putApplicantInfo(@PathVariable long id, @RequestBody String jsonString){
+        if(jsonString.equals("")){
+            return FailureBuilder.buildFailureMessage("报名信息为空！请检查信息");
+        }
+        JSONObject json = new JSONObject(jsonString);
+        return appService.putApplicantInfo(id, json);
     }
 }
