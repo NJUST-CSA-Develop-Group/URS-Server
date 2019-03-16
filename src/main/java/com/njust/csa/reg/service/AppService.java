@@ -169,9 +169,7 @@ public class AppService {
                 }
             }
 
-            else{
-                newInfo.setValue(info);
-            }
+            newInfo.setValue(info);
             applicantInfoEntities.add(newInfo);
         }
         return applicantInfoEntities;
