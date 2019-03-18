@@ -23,4 +23,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
     compile group: 'org.json', name: 'json', version: '20180813'
+
+    // https://mvnrepository.com/artifact/commons-codec/commons-codec
+    compile group: 'commons-codec', name: 'commons-codec', version: '1.12'
 }

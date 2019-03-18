@@ -3,9 +3,11 @@ package com.njust.csa.reg.service;
 import com.njust.csa.reg.repository.docker.ApplicantInfoRepo;
 import com.njust.csa.reg.repository.docker.TableInfoRepo;
 import com.njust.csa.reg.repository.docker.TableStructureRepo;
+import com.njust.csa.reg.repository.docker.UserRepo;
 import com.njust.csa.reg.repository.entities.ApplicantInfoEntity;
 import com.njust.csa.reg.repository.entities.TableInfoEntity;
 import com.njust.csa.reg.repository.entities.TableStructureEntity;
+import com.njust.csa.reg.repository.entities.UserEntity;
 import com.njust.csa.reg.util.FailureBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -22,13 +24,15 @@ public class AppService {
     private final TableInfoRepo tableInfoRepo;
     private final TableStructureRepo tableStructureRepo;
     private final ApplicantInfoRepo applicantInfoRepo;
+    private final UserRepo userRepo;
 
     @Autowired
     public AppService(TableInfoRepo tableInfoRepo, TableStructureRepo tableStructureRepo,
-                      ApplicantInfoRepo applicantInfoRepo) {
+                      ApplicantInfoRepo applicantInfoRepo, UserRepo userRepo) {
         this.tableInfoRepo = tableInfoRepo;
         this.tableStructureRepo = tableStructureRepo;
         this.applicantInfoRepo = applicantInfoRepo;
+        this.userRepo = userRepo;
     }
 
     //获取所有报名信息
@@ -40,7 +44,10 @@ public class AppService {
             JSONObject tableJson = new JSONObject();
             tableJson.put("id", table.getId());
             tableJson.put("name", table.getTitle());
-            tableJson.put("publisher", table.getPublisher());
+
+            UserEntity publisher = userRepo.findById(table.getPublisher()).orElse(null);
+            tableJson.put("publisher", publisher == null ? "匿名" : publisher.getRealName());
+
             tableJson.put("startTime", table.getStartTime() != null ? dateFormat.format(table.getStartTime()) : "");
             responseJson.put(tableJson);
         }
@@ -112,7 +119,7 @@ public class AppService {
             for (String aCase : cases) {
                 casesJson.put(aCase);
             }
-            structureJson.put("cases", casesJson);
+            structureJson.put("case", casesJson);
         }
 
         if(!tableStructure.getRange().equals("")){
