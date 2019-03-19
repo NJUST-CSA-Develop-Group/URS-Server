@@ -72,17 +72,18 @@ public class AdminController {
                 startTime = Timestamp.valueOf(json.getString("startTime"));
                 endTime = Timestamp.valueOf(json.getString("endTime"));
                 items = json.getJSONArray("items");
+
+                int activityId = adminService.postActivity(activityName, sessionList.get(session), startTime, endTime, items);
+                if(activityId != -1){
+                    JSONObject response = new JSONObject();
+                    response.put("id", activityId);
+                    return new ResponseEntity<>(response.toString(), HttpStatus.OK);
+                }
+                else{
+                    return failureResponse;
+                }
             } catch (Exception e){
                 e.printStackTrace();
-                return failureResponse;
-            }
-            int activityId = adminService.postActivity(activityName, sessionList.get(session), startTime, endTime, items);
-            if(activityId != -1){
-                JSONObject response = new JSONObject();
-                response.put("id", activityId);
-                return new ResponseEntity<>(response.toString(), HttpStatus.OK);
-            }
-            else{
                 return failureResponse;
             }
         }

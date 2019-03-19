@@ -28,6 +28,7 @@ public class TableStructureEntity {
     private Long belongsTo;
     private byte isShow;
     private byte isUnique;
+    private String extension;
 
     @Id
     @Column(name = "id", nullable = false)
@@ -192,12 +193,13 @@ public class TableStructureEntity {
                 Objects.equals(range, that.range) &&
                 Objects.equals(belongsTo, that.belongsTo) &&
                 Objects.equals(isShow, that.isShow) &&
-                Objects.equals(isUnique, that.isUnique);
+                Objects.equals(isUnique, that.isUnique) &&
+                Objects.equals(extension, that.extension);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, gmtCreate, gmtModified, tableId, index, title, type, isRequired, defaultValue, tips, description, cases, range, isUnique, isShow, belongsTo);
+        return Objects.hash(id, gmtCreate, gmtModified, tableId, index, title, extension, type, isRequired, defaultValue, tips, description, cases, range, isUnique, isShow, belongsTo);
     }
 
     @Basic
@@ -218,5 +220,15 @@ public class TableStructureEntity {
 
     public void setIsUnique(byte isUnique) {
         this.isUnique = isUnique;
+    }
+
+    @Basic
+    @Column(name = "extension", nullable = false, length = 30)
+    public String getExtension() {
+        return extension;
+    }
+
+    public void setExtension(String extension) {
+        this.extension = extension;
     }
 }
