@@ -1,6 +1,8 @@
 package com.njust.csa.reg.controller;
 
 import com.njust.csa.reg.service.AdminService;
+import com.njust.csa.reg.util.FailureBuilder;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -9,6 +11,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,4 +55,39 @@ public class AdminController {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    // 创建报名
+    @ResponseBody
+    @RequestMapping(value = "/admin/activity", method = RequestMethod.POST,
+            produces = "application/json;charset=UTF-8")
+    public ResponseEntity<String> postActivity(@RequestBody String jsonString, HttpSession session){
+        ResponseEntity<String> failureResponse = new ResponseEntity<>("", HttpStatus.NOT_ACCEPTABLE);
+        if(sessionList.containsKey(session)){
+            JSONObject json = new JSONObject(jsonString);
+            String activityName;
+            Timestamp startTime;
+            Timestamp endTime;
+            JSONArray items;
+            try{
+                activityName = json.getString("name");
+                startTime = Timestamp.valueOf(json.getString("startTime"));
+                endTime = Timestamp.valueOf(json.getString("endTime"));
+                items = json.getJSONArray("items");
+            } catch (Exception e){
+                e.printStackTrace();
+                return failureResponse;
+            }
+            int activityId = adminService.postActivity(activityName, sessionList.get(session), startTime, endTime, items);
+            if(activityId != -1){
+                JSONObject response = new JSONObject();
+                response.put("id", activityId);
+                return new ResponseEntity<>(response.toString(), HttpStatus.OK);
+            }
+            else{
+                return failureResponse;
+            }
+        }
+        else{
+            return failureResponse;
+        }
+    }
 }
