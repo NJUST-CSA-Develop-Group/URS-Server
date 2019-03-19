@@ -162,7 +162,7 @@ public class AppService {
             newInfo.setApplicantNumber(applicantNum);
             newInfo.setBelongsToStructureId(tableStructure.getId());
 
-            String info = value.isNull(tableStructure.getTitle()) ? null : value.getString(tableStructure.getTitle());
+            String info = value.isNull(tableStructure.getTitle()) ? "" : value.getString(tableStructure.getTitle());
 
             if(info == null){
                 if(tableStructure.getIsRequired() == (byte)1){
