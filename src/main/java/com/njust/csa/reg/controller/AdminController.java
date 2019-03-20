@@ -1,7 +1,6 @@
 package com.njust.csa.reg.controller;
 
 import com.njust.csa.reg.service.AdminService;
-import com.njust.csa.reg.util.FailureBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,14 +11,12 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 @Controller
 public class AdminController {
-    private static Map<HttpSession, String> sessionList = new HashMap<>();
+    private static Map<String, String> sessionList = new HashMap<>();
 
     private final AdminService adminService;
 
@@ -35,13 +32,9 @@ public class AdminController {
         JSONObject json = new JSONObject(jsonString);
         String username = json.getString("username");
         String password = json.getString("password");
-        //TODO 过期session清除
-
-        if(sessionList.containsValue(username)){
-            return new ResponseEntity(HttpStatus.UNAUTHORIZED);
-        }
         if(adminService.login(username, password)){
-            sessionList.put(session, username);
+            sessionList.merge(username, session.getId(), (key, value) -> value = session.getId());
+            session.setAttribute("username", username);
             return new ResponseEntity(HttpStatus.OK);
         }
         else{
@@ -53,7 +46,9 @@ public class AdminController {
     @RequestMapping(value = "/logout", method = RequestMethod.GET,
             produces = "application/json;charset=UTF-8")
     public ResponseEntity adminLogout(HttpSession session){
-        sessionList.remove(session);
+        if(session.getAttribute("username") != null){
+            sessionList.remove(session.getAttribute("username").toString());
+        }
         return new ResponseEntity(HttpStatus.OK);
     }
 
@@ -63,7 +58,9 @@ public class AdminController {
             produces = "application/json;charset=UTF-8")
     public ResponseEntity<String> postActivity(@RequestBody String jsonString, HttpSession session){
         ResponseEntity<String> failureResponse = new ResponseEntity<>("", HttpStatus.NOT_ACCEPTABLE);
-        if(sessionList.containsKey(session)){
+
+        String username = session.getAttribute("username").toString();
+        if(username != null && sessionList.get(username).equals(session.getId())){
             JSONObject json = new JSONObject(jsonString);
             String activityName;
             Timestamp startTime;
@@ -75,7 +72,7 @@ public class AdminController {
                 endTime = Timestamp.valueOf(json.getString("endTime"));
                 items = json.getJSONArray("items");
 
-                int activityId = adminService.postActivity(activityName, sessionList.get(session), startTime, endTime, items);
+                int activityId = adminService.postActivity(activityName, username, startTime, endTime, items);
                 if(activityId != -1){
                     JSONObject response = new JSONObject();
                     response.put("id", activityId);
