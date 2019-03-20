@@ -85,7 +85,11 @@ public class AppService {
         }
 
         for (ApplicantInfoEntity applicantInfoEntity : applicantInfoEntities) {
-            applicantInfoRepo.save(applicantInfoEntity);
+            try{
+                applicantInfoRepo.save(applicantInfoEntity);
+            } catch (Exception e){
+                return FailureBuilder.buildFailureMessage("数据库存储错误，请联系管理员！");
+            }
         }
         return new JSONObject().put("success", true).toString();
     }
@@ -162,7 +166,7 @@ public class AppService {
             newInfo.setApplicantNumber(applicantNum);
             newInfo.setBelongsToStructureId(tableStructure.getId());
 
-            String info = value.isNull(tableStructure.getTitle()) ? null : value.getString(tableStructure.getTitle());
+            String info = value.isNull(tableStructure.getTitle()) ? "" : value.getString(tableStructure.getTitle());
 
             if(info == null){
                 if(tableStructure.getIsRequired() == (byte)1){

@@ -79,7 +79,12 @@ public class ApplicantInfoEntity {
     }
 
     public void setValue(String value) {
-        this.value = value;
+        if(value == null){
+            this.value = "";
+        }
+        else{
+            this.value = value;
+        }
     }
 
     @Override
