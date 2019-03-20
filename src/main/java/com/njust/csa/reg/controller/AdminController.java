@@ -89,4 +89,45 @@ public class AdminController {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
         }
     }
+
+    @ResponseBody
+    @RequestMapping(value = "/user", method = RequestMethod.POST,
+            produces = "application/json;charset=UTF-8")
+    public ResponseEntity<String> getUsers(HttpSession session){
+        if(checkUser(session)){
+            return new ResponseEntity<>(adminService.getUser(), HttpStatus.OK);
+        }
+        else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/admin/activity", method = RequestMethod.GET,
+            produces = "application/json;charset=UTF-8")
+    public ResponseEntity<String> adminGetActivity(HttpSession session){
+        if(checkUser(session)){
+            return new ResponseEntity<>(adminService.getActivity(), HttpStatus.OK);
+        }
+        else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/admin/activity/{id}/status", method = RequestMethod.PUT,
+            produces = "application/json;charset=UTF-8")
+    public ResponseEntity setActivityStatus(@PathVariable long id, @RequestBody String jsonString, HttpSession session){
+        if(checkUser(session)){
+            byte status = (byte)Integer.parseInt(new JSONObject(jsonString).getString("status"));
+            if(adminService.setActivityStatus(id, status)){
+                return new ResponseEntity(HttpStatus.ACCEPTED);
+            }
+            else return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
+        }
+        else return new ResponseEntity(HttpStatus.UNAUTHORIZED);
+    }
+
+    // 检查当前用户连接是否已经登陆
+    private boolean checkUser(HttpSession session){
+        String userName = session.getAttribute("username") == null ?
+                null : session.getAttribute("username").toString();
+        return userName != null && sessionList.get(userName).equals(session.getId());
+    }
 }
