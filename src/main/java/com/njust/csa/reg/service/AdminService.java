@@ -47,7 +47,7 @@ public class AdminService {
         tableInfo.setPublisher(publisherEntity.get().getId());
         tableInfo.setStartTime(startTime);
         tableInfo.setEndTime(endTime);
-        if(startTime.before(new Timestamp(System.currentTimeMillis()))){
+        if(startTime == null || startTime.before(new Timestamp(System.currentTimeMillis()))){
             tableInfo.setStatus("open");
         }
         else{
@@ -70,8 +70,8 @@ public class AdminService {
         return activityId;
     }
 
-
-    private List<TableStructureEntity> createActivityStructure(long activityId, JSONArray items, long belongsTo){
+    @Transactional
+    public List<TableStructureEntity> createActivityStructure(long activityId, JSONArray items, long belongsTo){
         byte index = 0;
         List<TableStructureEntity> entityList = new ArrayList<>();
         Iterator objects = items.iterator();
@@ -86,11 +86,8 @@ public class AdminService {
             structureEntity.setDefaultValue(item.isNull("defaultValue") ? "" : item.getString("defaultValue"));
             structureEntity.setDescription(item.getString("description"));
             structureEntity.setTips(item.getString("tip"));
-            structureEntity.setIndex(index);
-
-            if(structureEntity.getType().equals("group")){
-                entityList.addAll(createActivityStructure(activityId, item.getJSONArray("subItem"), structureEntity.getId()));
-            }
+            structureEntity.setIndexNumber(index);
+            structureEntity.setIsShow((byte)1);
 
             if(!item.isNull("case")){
                 Iterator cases = item.getJSONArray("case").iterator();
@@ -105,7 +102,7 @@ public class AdminService {
 
             if(!item.isNull("range")){
                 JSONArray range = item.getJSONArray("range");
-                structureEntity.setRange(range.get(0) + "," + range.get(1));
+                structureEntity.setRanges(range.get(0) + "," + range.get(1));
             }
 
             if(belongsTo != -1){
@@ -115,6 +112,14 @@ public class AdminService {
             index++;
 
             entityList.add(structureEntity);
+
+            if(structureEntity.getType().equals("group")){
+                for (TableStructureEntity tableStructureEntity : entityList) {
+                    tableStructureRepo.save(tableStructureEntity);
+                }
+                entityList.clear();
+                entityList.addAll(createActivityStructure(activityId, item.getJSONArray("subItem"), structureEntity.getId()));
+            }
 
         }
 

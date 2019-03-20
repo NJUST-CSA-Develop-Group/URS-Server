@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface TableStructureRepo extends CrudRepository<TableStructureEntity, Long> {
 
-    List<TableStructureEntity> findAllByBelongsToOrderByIndex(long belongsTo);
+    List<TableStructureEntity> findAllByBelongsToOrderByIndexNumber(long belongsTo);
 
-    List<TableStructureEntity> findAllByTableIdAndBelongsToOrderByIndex(long tableId, Long BelongsTo);
+    List<TableStructureEntity> findAllByTableIdAndBelongsToOrderByIndexNumber(long tableId, Long BelongsTo);
 }

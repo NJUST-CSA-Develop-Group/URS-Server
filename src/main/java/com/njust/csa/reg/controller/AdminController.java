@@ -59,7 +59,8 @@ public class AdminController {
     public ResponseEntity<String> postActivity(@RequestBody String jsonString, HttpSession session){
         ResponseEntity<String> failureResponse = new ResponseEntity<>("", HttpStatus.NOT_ACCEPTABLE);
 
-        String username = session.getAttribute("username").toString();
+        String username = session.getAttribute("username") == null ?
+                null : session.getAttribute("username").toString();
         if(username != null && sessionList.get(username).equals(session.getId())){
             JSONObject json = new JSONObject(jsonString);
             String activityName;
