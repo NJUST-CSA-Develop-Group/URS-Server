@@ -68,11 +68,11 @@ public class AdminController {
             JSONArray items;
             try{
                 activityName = json.getString("name");
-                startTime = Timestamp.valueOf(json.getString("startTime"));
-                endTime = Timestamp.valueOf(json.getString("endTime"));
+                startTime = json.isNull("startTime") ? null : Timestamp.valueOf(json.getString("startTime"));
+                endTime = json.isNull("endTime") ? null : Timestamp.valueOf(json.getString("endTime"));
                 items = json.getJSONArray("items");
 
-                int activityId = adminService.postActivity(activityName, username, startTime, endTime, items);
+                long activityId = adminService.postActivity(activityName, username, startTime, endTime, items);
                 if(activityId != -1){
                     JSONObject response = new JSONObject();
                     response.put("id", activityId);

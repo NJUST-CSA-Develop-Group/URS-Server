@@ -38,7 +38,7 @@ public class AdminService {
     }
 
     @Transactional
-    public int postActivity(String activityName, String publisherName, Timestamp startTime, Timestamp endTime, JSONArray items){
+    public long postActivity(String activityName, String publisherName, Timestamp startTime, Timestamp endTime, JSONArray items){
         long activityId;
         TableInfoEntity tableInfo = new TableInfoEntity();
         tableInfo.setTitle(activityName);
@@ -58,7 +58,16 @@ public class AdminService {
         activityId = tableInfo.getId();
 
         List<TableStructureEntity> entities = createActivityStructure(activityId, items, -1);
-        return -1;
+
+        for (TableStructureEntity entity : entities) {
+            try{
+                tableStructureRepo.save(entity);
+            } catch (Exception e){
+                e.printStackTrace();
+                return -1;
+            }
+        }
+        return activityId;
     }
 
 
@@ -76,7 +85,7 @@ public class AdminService {
             structureEntity.setIsUnique(item.getBoolean("unique") ? (byte)1 : (byte)0);
             structureEntity.setDefaultValue(item.isNull("defaultValue") ? "" : item.getString("defaultValue"));
             structureEntity.setDescription(item.getString("description"));
-            structureEntity.setTips(item.getString("tip")); //TODO 和前端商讨传的tip的格式
+            structureEntity.setTips(item.getString("tip"));
             structureEntity.setIndex(index);
 
             if(structureEntity.getType().equals("group")){
