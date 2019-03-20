@@ -38,7 +38,7 @@ public class AppService {
     //获取所有报名信息
     public String getActivities() {
         JSONArray responseJson = new JSONArray();
-        List<TableInfoEntity> tables = tableInfoRepo.findAllByStatus("open");
+        List<TableInfoEntity> tables = tableInfoRepo.findAllByStatus((byte)1);
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         for (TableInfoEntity table : tables) {
             JSONObject tableJson = new JSONObject();

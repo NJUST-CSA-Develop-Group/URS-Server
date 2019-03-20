@@ -57,11 +57,8 @@ public class AdminController {
     @RequestMapping(value = "/admin/activity", method = RequestMethod.POST,
             produces = "application/json;charset=UTF-8")
     public ResponseEntity<String> postActivity(@RequestBody String jsonString, HttpSession session){
-        ResponseEntity<String> failureResponse = new ResponseEntity<>("", HttpStatus.NOT_ACCEPTABLE);
 
-        String username = session.getAttribute("username") == null ?
-                null : session.getAttribute("username").toString();
-        if(username != null && sessionList.get(username).equals(session.getId())){
+        if(checkUser(session)){
             JSONObject json = new JSONObject(jsonString);
             String activityName;
             Timestamp startTime;
@@ -73,22 +70,23 @@ public class AdminController {
                 endTime = json.isNull("endTime") ? null : Timestamp.valueOf(json.getString("endTime"));
                 items = json.getJSONArray("items");
 
-                long activityId = adminService.postActivity(activityName, username, startTime, endTime, items);
+                long activityId = adminService.postActivity(activityName,
+                        session.getAttribute("username").toString(), startTime, endTime, items);
                 if(activityId != -1){
                     JSONObject response = new JSONObject();
                     response.put("id", activityId);
                     return new ResponseEntity<>(response.toString(), HttpStatus.OK);
                 }
                 else{
-                    return failureResponse;
+                    return new ResponseEntity<>("", HttpStatus.NOT_ACCEPTABLE);
                 }
             } catch (Exception e){
                 e.printStackTrace();
-                return failureResponse;
+                return new ResponseEntity<>("", HttpStatus.NOT_ACCEPTABLE);
             }
         }
         else{
-            return failureResponse;
+            return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
         }
     }
 }

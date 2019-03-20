@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -47,12 +48,13 @@ public class AdminService {
         tableInfo.setPublisher(publisherEntity.get().getId());
         tableInfo.setStartTime(startTime);
         tableInfo.setEndTime(endTime);
-        if(startTime == null || startTime.before(new Timestamp(System.currentTimeMillis()))){
-            tableInfo.setStatus("open");
-        }
-        else{
-            tableInfo.setStatus("close");
-        }
+        tableInfo.setStatus((byte)0);
+//        if(startTime == null || startTime.before(new Timestamp(System.currentTimeMillis()))){
+//            tableInfo.setStatus("open");
+//        }
+//        else{
+//            tableInfo.setStatus("close");
+//        }
 
         tableInfoRepo.save(tableInfo);
         activityId = tableInfo.getId();
@@ -70,6 +72,9 @@ public class AdminService {
         return activityId;
     }
 
+    // 构造新报名结构
+    // 由于使用到事务，基于SpringAOP，故只能为public
+    // 不允许外部调用
     @Transactional
     public List<TableStructureEntity> createActivityStructure(long activityId, JSONArray items, long belongsTo){
         byte index = 0;
@@ -125,5 +130,47 @@ public class AdminService {
         }
 
         return entityList;
+    }
+
+    //获取所有用户的基本信息
+    public String getUser(){
+        JSONArray response = new JSONArray();
+        Iterable<UserEntity> userEntityIterator = userRepo.findAll();
+        for (UserEntity userEntity : userEntityIterator) {
+            JSONObject user = new JSONObject();
+            user.put("id", userEntity.getId());
+            user.put("name", userEntity.getName());
+            response.put(user);
+        }
+        return response.toString();
+    }
+
+    public String getActivity(){
+        JSONArray response = new JSONArray();
+        Iterable<TableInfoEntity> tables = tableInfoRepo.findAll();
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        for (TableInfoEntity table : tables) {
+            JSONObject tableJson = new JSONObject();
+            tableJson.put("id", table.getId());
+            tableJson.put("name", table.getTitle());
+            tableJson.put("publisher", table.getPublisher());
+            if(table.getStartTime() != null) tableJson.put("startTime", dateFormat.format(table.getStartTime()));
+            if(table.getEndTime() != null) tableJson.put("endTime", dateFormat.format(table.getEndTime()));
+            tableJson.put("status", table.getStatus());
+            response.put(tableJson);
+        }
+        return response.toString();
+    }
+
+    public boolean setActivityStatus(long id, byte status){
+        Optional<TableInfoEntity> table = tableInfoRepo.findById(id);
+        if(table.isPresent()){
+            TableInfoEntity tableInfoEntity = table.get();
+            tableInfoEntity.setStatus(status);
+            tableInfoRepo.save(tableInfoEntity);
+            return true;
+        }
+        return false;
     }
 }

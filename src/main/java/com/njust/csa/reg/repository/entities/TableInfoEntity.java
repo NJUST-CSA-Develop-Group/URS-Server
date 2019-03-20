@@ -19,7 +19,7 @@ public class TableInfoEntity {
     private long publisher;
     private Timestamp startTime;
     private Timestamp endTime;
-    private String status;
+    private byte status;
 
     @Id
     @Column(name = "id", nullable = false)
@@ -116,11 +116,11 @@ public class TableInfoEntity {
 
     @Basic
     @Column(name = "status", nullable = false, length = 10)
-    public String getStatus() {
+    public byte getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(byte status) {
         this.status = status;
     }
 }
