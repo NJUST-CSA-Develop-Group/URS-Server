@@ -83,6 +83,7 @@ public class AdminService {
             structureEntity.setExtension(item.getString("extension"));
             structureEntity.setType(item.getString("type"));
             structureEntity.setIsUnique(item.getBoolean("unique") ? (byte)1 : (byte)0);
+            structureEntity.setIsRequired(item.getBoolean("require") ? (byte)1 : (byte)0);
             structureEntity.setDefaultValue(item.isNull("defaultValue") ? "" : item.getString("defaultValue"));
             structureEntity.setDescription(item.getString("description"));
             structureEntity.setTips(item.getString("tip"));
