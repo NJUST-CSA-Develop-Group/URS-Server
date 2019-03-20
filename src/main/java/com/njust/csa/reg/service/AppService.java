@@ -48,7 +48,8 @@ public class AppService {
             UserEntity publisher = userRepo.findById(table.getPublisher()).orElse(null);
             tableJson.put("publisher", publisher == null ? "匿名" : publisher.getRealName());
 
-            tableJson.put("startTime", table.getStartTime() != null ? dateFormat.format(table.getStartTime()) : "");
+            if(table.getStartTime() != null) tableJson.put("startTime", dateFormat.format(table.getStartTime()));
+            if(table.getEndTime() != null) tableJson.put("endTime", dateFormat.format(table.getEndTime()));
             responseJson.put(tableJson);
         }
 
