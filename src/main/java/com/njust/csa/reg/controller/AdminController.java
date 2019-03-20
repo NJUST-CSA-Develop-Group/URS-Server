@@ -35,6 +35,8 @@ public class AdminController {
         JSONObject json = new JSONObject(jsonString);
         String username = json.getString("username");
         String password = json.getString("password");
+        //TODO 过期session清除
+
         if(sessionList.containsValue(username)){
             return new ResponseEntity(HttpStatus.UNAUTHORIZED);
         }
