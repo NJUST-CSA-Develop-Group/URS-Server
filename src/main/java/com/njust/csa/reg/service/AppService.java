@@ -38,7 +38,7 @@ public class AppService {
     //获取所有报名信息
     public String getActivities() {
         JSONArray responseJson = new JSONArray();
-        List<TableInfoEntity> tables = tableInfoRepo.findAllByStatus("open");
+        List<TableInfoEntity> tables = tableInfoRepo.findAllByStatus((byte)1);
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         for (TableInfoEntity table : tables) {
             JSONObject tableJson = new JSONObject();
@@ -48,7 +48,8 @@ public class AppService {
             UserEntity publisher = userRepo.findById(table.getPublisher()).orElse(null);
             tableJson.put("publisher", publisher == null ? "匿名" : publisher.getRealName());
 
-            tableJson.put("startTime", table.getStartTime() != null ? dateFormat.format(table.getStartTime()) : "");
+            if(table.getStartTime() != null) tableJson.put("startTime", dateFormat.format(table.getStartTime()));
+            if(table.getEndTime() != null) tableJson.put("endTime", dateFormat.format(table.getEndTime()));
             responseJson.put(tableJson);
         }
 
@@ -60,7 +61,7 @@ public class AppService {
         if (id <= 0) {
             return responseJson.toString();
         }
-        List<TableStructureEntity> tableStructures = tableStructureRepo.findAllByTableIdAndBelongsToOrderByIndex(id, null);
+        List<TableStructureEntity> tableStructures = tableStructureRepo.findAllByTableIdAndBelongsToOrderByIndexNumber(id, null);
         for (TableStructureEntity tableStructure : tableStructures) {
             if(tableStructure.getIsShow() == (byte)1){
                 responseJson.put(generateTableStructure(tableStructure));
@@ -73,7 +74,7 @@ public class AppService {
     public String putApplicantInfo(long tableId, JSONObject applicantInfo){
         List<ApplicantInfoEntity> applicantInfoEntities = new ArrayList<>();
         List<TableStructureEntity> tableStructures =
-                tableStructureRepo.findAllByTableIdAndBelongsToOrderByIndex(tableId, null);
+                tableStructureRepo.findAllByTableIdAndBelongsToOrderByIndexNumber(tableId, null);
         int newApplicantNum = applicantInfoRepo.countByBelongsToStructureId(tableStructures.get(0).getId()) + 1;
         for (TableStructureEntity structure : tableStructures) {
             try{
@@ -85,7 +86,11 @@ public class AppService {
         }
 
         for (ApplicantInfoEntity applicantInfoEntity : applicantInfoEntities) {
-            applicantInfoRepo.save(applicantInfoEntity);
+            try{
+                applicantInfoRepo.save(applicantInfoEntity);
+            } catch (Exception e){
+                return FailureBuilder.buildFailureMessage("数据库存储错误，请联系管理员！");
+            }
         }
         return new JSONObject().put("success", true).toString();
     }
@@ -94,7 +99,7 @@ public class AppService {
         JSONObject structureJson = new JSONObject();
         if (tableStructure.getType().equals("group")) {
             JSONArray groupItemsJson = new JSONArray();
-            List<TableStructureEntity> groupItems = tableStructureRepo.findAllByBelongsToOrderByIndex(tableStructure.getId());
+            List<TableStructureEntity> groupItems = tableStructureRepo.findAllByBelongsToOrderByIndexNumber(tableStructure.getId());
             for (TableStructureEntity groupItem : groupItems) {
                 if(tableStructure.getIsShow() == (byte)1){
                     groupItemsJson.put(generateTableStructure(groupItem));
@@ -122,9 +127,9 @@ public class AppService {
             structureJson.put("case", casesJson);
         }
 
-        if(!tableStructure.getRange().equals("")){
+        if(!tableStructure.getRanges().equals("")){
             JSONArray rangeJson = new JSONArray();
-            String[] ranges = tableStructure.getRange().split(",");
+            String[] ranges = tableStructure.getRanges().split(",");
             for (String range : ranges) {
                 rangeJson.put(range);
             }
@@ -140,7 +145,7 @@ public class AppService {
 
         if(tableStructure.getType().equals("group")){
             List<TableStructureEntity> groupItems =
-                    tableStructureRepo.findAllByTableIdAndBelongsToOrderByIndex(tableStructure.getTableId(),
+                    tableStructureRepo.findAllByTableIdAndBelongsToOrderByIndexNumber(tableStructure.getTableId(),
                             tableStructure.getId());
             JSONObject groupJson = value.isNull(tableStructure.getTitle()) ?
                     null : value.getJSONObject(tableStructure.getTitle());
@@ -162,7 +167,7 @@ public class AppService {
             newInfo.setApplicantNumber(applicantNum);
             newInfo.setBelongsToStructureId(tableStructure.getId());
 
-            String info = value.isNull(tableStructure.getTitle()) ? null : value.getString(tableStructure.getTitle());
+            String info = value.isNull(tableStructure.getTitle()) ? "" : value.getString(tableStructure.getTitle());
 
             if(info == null){
                 if(tableStructure.getIsRequired() == (byte)1){

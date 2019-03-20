@@ -18,6 +18,7 @@ public class TableStructureEntity {
     private long tableId;
     private byte index;
     private String title;
+    private String extension;
     private String type;
     private byte isRequired;
     private String defaultValue;
@@ -25,9 +26,9 @@ public class TableStructureEntity {
     private String description;
     private String cases;
     private String range;
-    private Long belongsTo;
-    private byte isShow;
     private byte isUnique;
+    private byte isShow;
+    private Long belongsTo;
 
     @Id
     @Column(name = "id", nullable = false)
@@ -73,12 +74,12 @@ public class TableStructureEntity {
     }
 
     @Basic
-    @Column(name = "index", nullable = false)
-    public byte getIndex() {
+    @Column(name = "index_number", nullable = false)
+    public byte getIndexNumber() {
         return index;
     }
 
-    public void setIndex(byte index) {
+    public void setIndexNumber(byte index) {
         this.index = index;
     }
 
@@ -93,7 +94,17 @@ public class TableStructureEntity {
     }
 
     @Basic
-    @Column(name = "type", nullable = false, length = 30, columnDefinition = "text")
+    @Column(name = "extension", nullable = false, length = 30)
+    public String getExtension() {
+        return extension;
+    }
+
+    public void setExtension(String extension) {
+        this.extension = extension;
+    }
+
+    @Basic
+    @Column(name = "type", nullable = false, length = 30)
     public String getType() {
         return type;
     }
@@ -103,7 +114,7 @@ public class TableStructureEntity {
     }
 
     @Basic
-    @Column(name = "is_required", nullable = false, columnDefinition = "0")
+    @Column(name = "is_required", nullable = false)
     public byte getIsRequired() {
         return isRequired;
     }
@@ -113,7 +124,7 @@ public class TableStructureEntity {
     }
 
     @Basic
-    @Column(name = "default_value", nullable = false, length = 30, columnDefinition = "")
+    @Column(name = "default_value", nullable = false, length = 30)
     public String getDefaultValue() {
         return defaultValue;
     }
@@ -123,7 +134,7 @@ public class TableStructureEntity {
     }
 
     @Basic
-    @Column(name = "tips", nullable = false, length = 30, columnDefinition = "")
+    @Column(name = "tips", nullable = false, length = 30)
     public String getTips() {
         return tips;
     }
@@ -133,7 +144,7 @@ public class TableStructureEntity {
     }
 
     @Basic
-    @Column(name = "description", nullable = false, length = 70, columnDefinition = "")
+    @Column(name = "description", nullable = false, length = 70)
     public String getDescription() {
         return description;
     }
@@ -143,9 +154,9 @@ public class TableStructureEntity {
     }
 
     @Basic
-    @Column(name = "cases", nullable = false, length = 50, columnDefinition = "")
+    @Column(name = "cases", nullable = false, length = 50)
     public String getCases() {
-        return cases;
+        return cases == null ? "" : cases;
     }
 
     public void setCases(String cases) {
@@ -153,13 +164,33 @@ public class TableStructureEntity {
     }
 
     @Basic
-    @Column(name = "range", nullable = false, length = 50, columnDefinition = "")
-    public String getRange() {
-        return range;
+    @Column(name = "ranges", nullable = false, length = 50)
+    public String getRanges() {
+        return range == null ? "" : range;
     }
 
-    public void setRange(String range) {
+    public void setRanges(String range) {
         this.range = range;
+    }
+
+    @Basic
+    @Column(name = "is_unique", nullable = false)
+    public byte getIsUnique() {
+        return isUnique;
+    }
+
+    public void setIsUnique(byte isUnique) {
+        this.isUnique = isUnique;
+    }
+
+    @Basic
+    @Column(name = "is_show", nullable = false)
+    public byte getIsShow() {
+        return isShow;
+    }
+
+    public void setIsShow(byte isShow) {
+        this.isShow = isShow;
     }
 
     @Basic
@@ -181,42 +212,23 @@ public class TableStructureEntity {
                 tableId == that.tableId &&
                 index == that.index &&
                 isRequired == that.isRequired &&
+                isUnique == that.isUnique &&
+                isShow == that.isShow &&
                 Objects.equals(gmtCreate, that.gmtCreate) &&
                 Objects.equals(gmtModified, that.gmtModified) &&
                 Objects.equals(title, that.title) &&
+                Objects.equals(extension, that.extension) &&
                 Objects.equals(type, that.type) &&
                 Objects.equals(defaultValue, that.defaultValue) &&
                 Objects.equals(tips, that.tips) &&
                 Objects.equals(description, that.description) &&
                 Objects.equals(cases, that.cases) &&
                 Objects.equals(range, that.range) &&
-                Objects.equals(belongsTo, that.belongsTo) &&
-                Objects.equals(isShow, that.isShow) &&
-                Objects.equals(isUnique, that.isUnique);
+                Objects.equals(belongsTo, that.belongsTo);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, gmtCreate, gmtModified, tableId, index, title, type, isRequired, defaultValue, tips, description, cases, range, isUnique, isShow, belongsTo);
-    }
-
-    @Basic
-    @Column(name = "is_show", nullable = false)
-    public byte getIsShow() {
-        return isShow;
-    }
-
-    public void setIsShow(byte isShow) {
-        this.isShow = isShow;
-    }
-
-    @Basic
-    @Column(name = "is_unique", nullable = false)
-    public byte getIsUnique() {
-        return isUnique;
-    }
-
-    public void setIsUnique(byte isUnique) {
-        this.isUnique = isUnique;
+        return Objects.hash(id, gmtCreate, gmtModified, tableId, index, title, extension, type, isRequired, defaultValue, tips, description, cases, range, isUnique, isShow, belongsTo);
     }
 }
