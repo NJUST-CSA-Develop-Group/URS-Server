@@ -135,12 +135,23 @@ public class AdminController {
         else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
     }
 
+    //删除一个报名
     @ResponseBody
     @RequestMapping(value = "/admin/activity/{id}", method = RequestMethod.DELETE,
             produces = "application/json;charset=UTF-8")
     public ResponseEntity<String> deleteActivity(@PathVariable long id, HttpSession session){
         if(checkUser(session)){
             return new ResponseEntity<>(adminService.deleteActivity(id), HttpStatus.OK);
+        }
+        else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/admin/activity/{id}/applicant", method = RequestMethod.GET,
+            produces = "application/json;charset=UTF-8")
+    public ResponseEntity<String> getActivityApplicants(@PathVariable long id, HttpSession session){
+        if(checkUser(session)){
+            return new ResponseEntity<>(adminService.getActivityApplicants(id), HttpStatus.OK);
         }
         else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
     }

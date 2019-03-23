@@ -1,11 +1,7 @@
 package com.njust.csa.reg.service;
 
-import com.njust.csa.reg.repository.docker.TableInfoRepo;
-import com.njust.csa.reg.repository.docker.TableStructureRepo;
-import com.njust.csa.reg.repository.docker.UserRepo;
-import com.njust.csa.reg.repository.entities.TableInfoEntity;
-import com.njust.csa.reg.repository.entities.TableStructureEntity;
-import com.njust.csa.reg.repository.entities.UserEntity;
+import com.njust.csa.reg.repository.docker.*;
+import com.njust.csa.reg.repository.entities.*;
 import com.njust.csa.reg.util.ActivityUtil;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.json.JSONArray;
@@ -15,24 +11,27 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class AdminService {
     private final UserRepo userRepo;
     private final TableStructureRepo tableStructureRepo;
     private final TableInfoRepo tableInfoRepo;
+    private final ApplicantInfoRepo applicantInfoRepo;
+    private final ApplicantInfoViewRepo applicantInfoViewRepo;
     private final ActivityUtil activityUtil;
 
     @Autowired
     public AdminService(UserRepo userRepo, TableStructureRepo tableStructureRepo,
-                        TableInfoRepo tableInfoRepo, ActivityUtil activityUtil){
+                        TableInfoRepo tableInfoRepo, ApplicantInfoRepo applicantInfoRepo,
+                        ApplicantInfoViewRepo applicantInfoViewRepo,
+                        ActivityUtil activityUtil){
         this.userRepo = userRepo;
         this.tableStructureRepo = tableStructureRepo;
         this.tableInfoRepo = tableInfoRepo;
+        this.applicantInfoRepo = applicantInfoRepo;
+        this.applicantInfoViewRepo = applicantInfoViewRepo;
         this.activityUtil = activityUtil;
     }
 
@@ -115,6 +114,33 @@ public class AdminService {
         return "";
     }
 
+    //获取单个活动的所有报名者
+    public String getActivityApplicants(long tableId){
+        Optional tableInfoEntity = tableInfoRepo.findById(tableId);
+        if(!tableInfoEntity.isPresent()) return "未找到ID对应的报名！";
+
+        JSONArray responseJson = new JSONArray();
+
+        List<ApplicantInfoViewEntity> applicantInfoEntities = applicantInfoViewRepo.findAllByTableId(tableId);
+
+        Map<Integer, Map<Long, String>> applicantMap = new HashMap<>();
+        for (ApplicantInfoViewEntity applicantInfoEntity : applicantInfoEntities) {
+            if(!applicantMap.containsKey(applicantInfoEntity.getApplicantNumber())){
+                applicantMap.put(applicantInfoEntity.getApplicantNumber(), new HashMap<>());
+            }
+            applicantMap.get(applicantInfoEntity.getApplicantNumber())
+                    .put(applicantInfoEntity.getStructureId(), applicantInfoEntity.getValue());
+        }
+
+        List<TableStructureEntity> mainItemEntities =
+                tableStructureRepo.findAllByTableIdAndBelongsToOrderByIndexNumber(tableId, null);
+
+        applicantMap.forEach((key, value) ->
+                responseJson.put(generateApplicantInfoJson(applicantMap, key, mainItemEntities)));
+
+        return responseJson.toString();
+    }
+
     /* ======内部方法====== */
 
     // 构造新报名结构
@@ -174,5 +200,24 @@ public class AdminService {
         }
 
         return entityList;
+    }
+
+    private JSONObject generateApplicantInfoJson(Map<Integer, Map<Long, String>> applicantMap, int applicantNumber,
+                                                 List<TableStructureEntity> tableStructureEntities){
+        JSONObject result = new JSONObject();
+        for (TableStructureEntity tableStructureEntity : tableStructureEntities) {
+            if(tableStructureEntity.getType().equals("group")){
+                List<TableStructureEntity> subItemEntities = tableStructureRepo.
+                        findAllByTableIdAndBelongsToOrderByIndexNumber(
+                                tableStructureEntity.getTableId(), tableStructureEntity.getId());
+                result.put(tableStructureEntity.getTitle(),
+                        generateApplicantInfoJson(applicantMap, applicantNumber, subItemEntities));
+            }
+            else{
+                result.put(tableStructureEntity.getTitle(),
+                        applicantMap.get(applicantNumber).get(tableStructureEntity.getId()));
+            }
+        }
+        return result;
     }
 }
