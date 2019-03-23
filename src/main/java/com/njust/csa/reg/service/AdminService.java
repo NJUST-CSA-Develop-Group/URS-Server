@@ -19,16 +19,19 @@ public class AdminService {
     private final TableStructureRepo tableStructureRepo;
     private final TableInfoRepo tableInfoRepo;
     private final ApplicantInfoViewRepo applicantInfoViewRepo;
+    private final ApplicantInfoRepo applicantInfoRepo;
     private final ActivityUtil activityUtil;
 
     @Autowired
     public AdminService(UserRepo userRepo, TableStructureRepo tableStructureRepo,
                         TableInfoRepo tableInfoRepo, ApplicantInfoViewRepo applicantInfoViewRepo,
+                        ApplicantInfoRepo applicantInfoRepo,
                         ActivityUtil activityUtil){
         this.userRepo = userRepo;
         this.tableStructureRepo = tableStructureRepo;
         this.tableInfoRepo = tableInfoRepo;
         this.applicantInfoViewRepo = applicantInfoViewRepo;
+        this.applicantInfoRepo = applicantInfoRepo;
         this.activityUtil = activityUtil;
     }
 
@@ -144,6 +147,22 @@ public class AdminService {
         });
 
         return responseJson.toString();
+    }
+
+    @Transactional
+    public String deleteApplicantInfo(long tableId, int applicantNumber){
+        List<ApplicantInfoViewEntity> applicantInfoViewEntities =
+                applicantInfoViewRepo.findAllByTableIdAndApplicantNumber(tableId, applicantNumber);
+        List<Long> applicantInfoId = new ArrayList<>();
+        for (ApplicantInfoViewEntity applicantInfoViewEntity : applicantInfoViewEntities) {
+            applicantInfoId.add(applicantInfoViewEntity.getId());
+        }
+
+        int deleteNum = applicantInfoRepo.deleteAllByIdIn(applicantInfoId);
+
+        return "";
+
+
     }
 
     /* ======内部方法====== */

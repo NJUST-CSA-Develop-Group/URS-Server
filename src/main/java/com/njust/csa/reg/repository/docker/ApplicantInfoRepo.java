@@ -10,5 +10,5 @@ public interface ApplicantInfoRepo extends CrudRepository<ApplicantInfoEntity, L
 
     boolean existsByBelongsToStructureIdAndValue(long structureId, String value);
 
-    List<ApplicantInfoEntity> findAllByBelongsToStructureIdInOrderByApplicantNumberDesc(List<Long> in);
+    Integer deleteAllByIdIn(List<Long> in);
 }

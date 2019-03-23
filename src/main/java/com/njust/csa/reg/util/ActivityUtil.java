@@ -98,7 +98,7 @@ public class ActivityUtil {
         for (TableInfoEntity table : tables) {
             JSONObject tableJson = new JSONObject();
             if(isAdmin) tableJson.put("status", table.getStatus());
-            tableJson.put("id", table.getId());
+            tableJson.put("id", Long.toString(table.getId()));
             tableJson.put("name", table.getTitle());
 
             UserEntity publisher = userRepo.findById(table.getPublisher()).orElse(null);

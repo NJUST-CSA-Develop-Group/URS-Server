@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface ApplicantInfoViewRepo extends CrudRepository<ApplicantInfoViewEntity, Long> {
     List<ApplicantInfoViewEntity> findAllByTableId(long id);
+
+    List<ApplicantInfoViewEntity> findAllByTableIdAndApplicantNumber(long tableId, int applicantNumber);
 }

@@ -156,6 +156,16 @@ public class AdminController {
         else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
     }
 
+    @ResponseBody
+    @RequestMapping(value = "/admin/activity/{aid}/applicant/{iid}", method = RequestMethod.DELETE,
+            produces = "application/json;charset=UTF-8")
+    public ResponseEntity<String> deleteApplicantInfo(@PathVariable long aid, @PathVariable int iid, HttpSession session){
+        if(checkUser(session)){
+            return new ResponseEntity<>(adminService.deleteApplicantInfo(aid, iid), HttpStatus.OK);
+        }
+        else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+    }
+
     // 检查当前用户连接是否已经登陆
     private boolean checkUser(HttpSession session){
         String userName = session.getAttribute("username") == null ?
