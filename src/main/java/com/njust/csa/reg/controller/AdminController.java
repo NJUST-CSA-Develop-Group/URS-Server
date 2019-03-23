@@ -90,32 +90,32 @@ public class AdminController {
         }
     }
 
+    //获取用户列表，用于登录
     @ResponseBody
-    @RequestMapping(value = "/user", method = RequestMethod.POST,
+    @RequestMapping(value = "/user", method = RequestMethod.GET,
             produces = "application/json;charset=UTF-8")
-    public ResponseEntity<String> getUsers(HttpSession session){
-        if(checkUser(session)){
-            return new ResponseEntity<>(adminService.getUser(), HttpStatus.OK);
-        }
-        else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+    public ResponseEntity<String> getUsers(){
+        return new ResponseEntity<>(adminService.getUser(), HttpStatus.OK);
     }
 
+    //获取所有活动
     @ResponseBody
     @RequestMapping(value = "/admin/activity", method = RequestMethod.GET,
             produces = "application/json;charset=UTF-8")
     public ResponseEntity<String> adminGetActivity(HttpSession session){
         if(checkUser(session)){
-            return new ResponseEntity<>(adminService.getActivity(), HttpStatus.OK);
+            return new ResponseEntity<>(adminService.getActivities(), HttpStatus.OK);
         }
         else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
     }
 
+    //设置活动状态
     @ResponseBody
     @RequestMapping(value = "/admin/activity/{id}/status", method = RequestMethod.PUT,
             produces = "application/json;charset=UTF-8")
     public ResponseEntity setActivityStatus(@PathVariable long id, @RequestBody String jsonString, HttpSession session){
         if(checkUser(session)){
-            byte status = (byte)Integer.parseInt(new JSONObject(jsonString).getString("status"));
+            byte status = (byte)new JSONObject(jsonString).getInt("status");
             if(adminService.setActivityStatus(id, status)){
                 return new ResponseEntity(HttpStatus.ACCEPTED);
             }
@@ -124,10 +124,32 @@ public class AdminController {
         else return new ResponseEntity(HttpStatus.UNAUTHORIZED);
     }
 
+    //作为管理员获取一个活动的结构
+    @ResponseBody
+    @RequestMapping(value = "/admin/activity/{id}", method = RequestMethod.GET,
+            produces = "application/json;charset=UTF-8")
+    public ResponseEntity<String> getActivityStructure(@PathVariable long id, HttpSession session){
+        if(checkUser(session)){
+            return new ResponseEntity<>(adminService.getActivityStructure(id), HttpStatus.OK);
+        }
+        else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/admin/activity/{id}", method = RequestMethod.DELETE,
+            produces = "application/json;charset=UTF-8")
+    public ResponseEntity<String> deleteActivity(@PathVariable long id, HttpSession session){
+        if(checkUser(session)){
+            return new ResponseEntity<>(adminService.deleteActivity(id), HttpStatus.OK);
+        }
+        else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+    }
+
     // 检查当前用户连接是否已经登陆
     private boolean checkUser(HttpSession session){
         String userName = session.getAttribute("username") == null ?
                 null : session.getAttribute("username").toString();
         return userName != null && sessionList.get(userName).equals(session.getId());
     }
+
 }

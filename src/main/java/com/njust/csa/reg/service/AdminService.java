@@ -6,6 +6,7 @@ import com.njust.csa.reg.repository.docker.UserRepo;
 import com.njust.csa.reg.repository.entities.TableInfoEntity;
 import com.njust.csa.reg.repository.entities.TableStructureEntity;
 import com.njust.csa.reg.repository.entities.UserEntity;
+import com.njust.csa.reg.util.ActivityUtil;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -25,13 +25,15 @@ public class AdminService {
     private final UserRepo userRepo;
     private final TableStructureRepo tableStructureRepo;
     private final TableInfoRepo tableInfoRepo;
+    private final ActivityUtil activityUtil;
 
     @Autowired
     public AdminService(UserRepo userRepo, TableStructureRepo tableStructureRepo,
-                        TableInfoRepo tableInfoRepo){
+                        TableInfoRepo tableInfoRepo, ActivityUtil activityUtil){
         this.userRepo = userRepo;
         this.tableStructureRepo = tableStructureRepo;
         this.tableInfoRepo = tableInfoRepo;
+        this.activityUtil = activityUtil;
     }
 
     public boolean login(String username, String password){
@@ -72,6 +74,49 @@ public class AdminService {
         return activityId;
     }
 
+    //获取所有用户的基本信息
+    public String getUser(){
+        JSONArray response = new JSONArray();
+        Iterable<UserEntity> userEntityIterator = userRepo.findAll();
+        for (UserEntity userEntity : userEntityIterator) {
+            JSONObject user = new JSONObject();
+            user.put("id", userEntity.getId());
+            user.put("name", userEntity.getName());
+            response.put(user);
+        }
+        return response.toString();
+    }
+
+    public String getActivities(){
+        return activityUtil.getActivities(true).toString();
+    }
+
+    public boolean setActivityStatus(long id, byte status){
+        Optional<TableInfoEntity> table = tableInfoRepo.findById(id);
+        if(table.isPresent()){
+            TableInfoEntity tableInfoEntity = table.get();
+            tableInfoEntity.setStatus(status);
+            tableInfoRepo.save(tableInfoEntity);
+            return true;
+        }
+        return false;
+    }
+
+    public String getActivityStructure(long id){
+        return activityUtil.generateActivityStructure(id, true).toString();
+    }
+
+    //删除相关活动
+    public String deleteActivity(long id){
+        Optional tableEntity = tableInfoRepo.findById(id);
+        if(!tableEntity.isPresent()) return "未找到ID对应的报名！";
+
+        tableInfoRepo.delete((TableInfoEntity)tableEntity.get());
+        return "";
+    }
+
+    /* ======内部方法====== */
+
     // 构造新报名结构
     // 由于使用到事务，基于SpringAOP，故只能为public
     // 不允许外部调用
@@ -93,7 +138,6 @@ public class AdminService {
             structureEntity.setDescription(item.getString("description"));
             structureEntity.setTips(item.getString("tip"));
             structureEntity.setIndexNumber(index);
-            structureEntity.setIsShow((byte)1);
 
             if(!item.isNull("case")){
                 Iterator cases = item.getJSONArray("case").iterator();
@@ -130,47 +174,5 @@ public class AdminService {
         }
 
         return entityList;
-    }
-
-    //获取所有用户的基本信息
-    public String getUser(){
-        JSONArray response = new JSONArray();
-        Iterable<UserEntity> userEntityIterator = userRepo.findAll();
-        for (UserEntity userEntity : userEntityIterator) {
-            JSONObject user = new JSONObject();
-            user.put("id", userEntity.getId());
-            user.put("name", userEntity.getName());
-            response.put(user);
-        }
-        return response.toString();
-    }
-
-    public String getActivity(){
-        JSONArray response = new JSONArray();
-        Iterable<TableInfoEntity> tables = tableInfoRepo.findAll();
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        for (TableInfoEntity table : tables) {
-            JSONObject tableJson = new JSONObject();
-            tableJson.put("id", table.getId());
-            tableJson.put("name", table.getTitle());
-            tableJson.put("publisher", table.getPublisher());
-            if(table.getStartTime() != null) tableJson.put("startTime", dateFormat.format(table.getStartTime()));
-            if(table.getEndTime() != null) tableJson.put("endTime", dateFormat.format(table.getEndTime()));
-            tableJson.put("status", table.getStatus());
-            response.put(tableJson);
-        }
-        return response.toString();
-    }
-
-    public boolean setActivityStatus(long id, byte status){
-        Optional<TableInfoEntity> table = tableInfoRepo.findById(id);
-        if(table.isPresent()){
-            TableInfoEntity tableInfoEntity = table.get();
-            tableInfoEntity.setStatus(status);
-            tableInfoRepo.save(tableInfoEntity);
-            return true;
-        }
-        return false;
     }
 }
