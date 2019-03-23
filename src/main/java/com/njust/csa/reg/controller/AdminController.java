@@ -166,6 +166,20 @@ public class AdminController {
         else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
     }
 
+    @ResponseBody
+    @RequestMapping(value = "/admin/activity/{id}", method = RequestMethod.PUT,
+            produces = "application/json;charset=UTF-8")
+    public ResponseEntity<String> alterActivityStructure(@PathVariable long id, HttpSession session,
+                                                         @RequestBody String jsonString){
+        if(checkUser(session) ){
+            if(adminService.alterActivityStructure(id, new JSONObject(jsonString)))
+                return new ResponseEntity<>("", HttpStatus.OK);
+            else
+                return new ResponseEntity<>("", HttpStatus.NOT_ACCEPTABLE);
+        }
+        else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+    }
+
     // 检查当前用户连接是否已经登陆
     private boolean checkUser(HttpSession session){
         String userName = session.getAttribute("username") == null ?

@@ -12,4 +12,6 @@ public interface TableStructureRepo extends CrudRepository<TableStructureEntity,
     List<TableStructureEntity> findAllByTableIdAndBelongsToOrderByIndexNumber(long tableId, Long BelongsTo);
 
     TableStructureEntity findTopByTableIdAndIsUnique(long id, byte isUnique);
+
+    List<TableStructureEntity> findAllByTableId(long id);
 }

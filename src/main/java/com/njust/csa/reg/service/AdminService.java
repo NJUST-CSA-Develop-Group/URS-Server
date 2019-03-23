@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -95,6 +97,10 @@ public class AdminService {
         if(table.isPresent()){
             TableInfoEntity tableInfoEntity = table.get();
             tableInfoEntity.setStatus(status);
+            if(status == (byte)3 && tableInfoEntity.getEndTime() == null){
+                tableInfoEntity.setEndTime(new Timestamp(System.currentTimeMillis()));
+            }
+
             tableInfoRepo.save(tableInfoEntity);
             return true;
         }
@@ -107,11 +113,31 @@ public class AdminService {
 
     //删除相关活动
     public String deleteActivity(long id){
-        Optional tableEntity = tableInfoRepo.findById(id);
-        if(!tableEntity.isPresent()) return "未找到ID对应的报名！";
+        JSONObject responseJson = new JSONObject();
+        Optional<TableInfoEntity> table = tableInfoRepo.findById(id);
+        if(!table.isPresent()){
+            responseJson.put("reason", "未找到ID对应的报名！");
+            return responseJson.toString();
+        }
 
-        tableInfoRepo.delete((TableInfoEntity)tableEntity.get());
-        return "";
+        TableInfoEntity tableInfoEntity = table.get();
+
+        if(tableInfoEntity.getStatus() != (byte)3){
+            responseJson.put("reason", "报名尚未结束，不允许删除！");
+            return responseJson.toString();
+        }
+
+        Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+        LocalDateTime currentDate = currentTime.toLocalDateTime();
+        if(currentDate.minusDays(30).isAfter(tableInfoEntity.getEndTime().toLocalDateTime())){
+            responseJson.put("reason", "报名结束后不超过三十天，不允许删除！");
+            return responseJson.toString();
+        }
+
+
+        tableInfoRepo.delete(tableInfoEntity);
+        responseJson.put("reason", "");
+        return responseJson.toString();
     }
 
     //获取单个活动的所有报名者
@@ -151,8 +177,14 @@ public class AdminService {
 
     @Transactional
     public String deleteApplicantInfo(long tableId, int applicantNumber){
+        JSONObject responseJson = new JSONObject();
+
         List<ApplicantInfoViewEntity> applicantInfoViewEntities =
                 applicantInfoViewRepo.findAllByTableIdAndApplicantNumber(tableId, applicantNumber);
+        if(applicantInfoViewEntities.size() == 0){
+            responseJson.put("reason", "不存在此ID的报名信息！");
+            return responseJson.toString();
+        }
         List<Long> applicantInfoId = new ArrayList<>();
         for (ApplicantInfoViewEntity applicantInfoViewEntity : applicantInfoViewEntities) {
             applicantInfoId.add(applicantInfoViewEntity.getId());
@@ -160,9 +192,34 @@ public class AdminService {
 
         int deleteNum = applicantInfoRepo.deleteAllByIdIn(applicantInfoId);
 
-        return "";
+        responseJson.put("reason", "");
+        return responseJson.toString();
+    }
 
+    @Transactional
+    public boolean alterActivityStructure(long tableId, JSONObject data){
 
+        Optional<TableInfoEntity> tableInfo = tableInfoRepo.findById(tableId);
+        if(!tableInfo.isPresent()) return false;
+
+        TableInfoEntity tableInfoEntity = tableInfo.get();
+        if(tableInfoEntity.getStatus() == (byte)3) return false;
+
+        tableStructureRepo.deleteAll(tableStructureRepo.findAllByTableId(tableId));
+
+        JSONArray items = data.getJSONArray("items");
+
+        List<TableStructureEntity> entities = createActivityStructure(tableId, items, -1);
+
+        for (TableStructureEntity entity : entities) {
+            try{
+                tableStructureRepo.save(entity);
+            } catch (Exception e){
+                e.printStackTrace();
+                return false;
+            }
+        }
+        return true;
     }
 
     /* ======内部方法====== */
