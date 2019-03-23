@@ -18,19 +18,16 @@ public class AdminService {
     private final UserRepo userRepo;
     private final TableStructureRepo tableStructureRepo;
     private final TableInfoRepo tableInfoRepo;
-    private final ApplicantInfoRepo applicantInfoRepo;
     private final ApplicantInfoViewRepo applicantInfoViewRepo;
     private final ActivityUtil activityUtil;
 
     @Autowired
     public AdminService(UserRepo userRepo, TableStructureRepo tableStructureRepo,
-                        TableInfoRepo tableInfoRepo, ApplicantInfoRepo applicantInfoRepo,
-                        ApplicantInfoViewRepo applicantInfoViewRepo,
+                        TableInfoRepo tableInfoRepo, ApplicantInfoViewRepo applicantInfoViewRepo,
                         ActivityUtil activityUtil){
         this.userRepo = userRepo;
         this.tableStructureRepo = tableStructureRepo;
         this.tableInfoRepo = tableInfoRepo;
-        this.applicantInfoRepo = applicantInfoRepo;
         this.applicantInfoViewRepo = applicantInfoViewRepo;
         this.activityUtil = activityUtil;
     }
@@ -135,8 +132,16 @@ public class AdminService {
         List<TableStructureEntity> mainItemEntities =
                 tableStructureRepo.findAllByTableIdAndBelongsToOrderByIndexNumber(tableId, null);
 
-        applicantMap.forEach((key, value) ->
-                responseJson.put(generateApplicantInfoJson(applicantMap, key, mainItemEntities)));
+        //TODO 此处查询可能会有空指针异常
+        TableStructureEntity uniqueEntity = tableStructureRepo.findTopByTableIdAndIsUnique(tableId, (byte)1);
+
+        applicantMap.forEach((key, value) ->{
+            JSONObject applicantJson = new JSONObject();
+            applicantJson.put("id", key);
+            applicantJson.put("unique", value.get(uniqueEntity.getId()));
+            applicantJson.put("data", generateApplicantInfoJson(applicantMap, key, mainItemEntities));
+            responseJson.put(applicantJson);
+        });
 
         return responseJson.toString();
     }
