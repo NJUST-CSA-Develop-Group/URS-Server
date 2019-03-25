@@ -32,7 +32,7 @@ public class AdminController {
         return "/page/index.html";
     }
 
-    @RequestMapping(value = "/page/activity/**", method = RequestMethod.GET)
+    @RequestMapping(value = "/page/activity/*", method = RequestMethod.GET)
     public String checkIndex(HttpServletRequest request, HttpSession session){
         if(checkUser(session)){
             return "/page/index.html";
@@ -63,6 +63,7 @@ public class AdminController {
     public ResponseEntity adminLogout(HttpSession session){
         if(session.getAttribute("username") != null){
             sessionList.remove(session.getAttribute("username").toString());
+            session.removeAttribute("username");
         }
         return new ResponseEntity(HttpStatus.OK);
     }
@@ -197,6 +198,7 @@ public class AdminController {
 
     // 检查当前用户连接是否已经登陆
     private boolean checkUser(HttpSession session){
+        if(session == null) return false;
         String userName = session.getAttribute("username") == null ?
                 null : session.getAttribute("username").toString();
         return userName != null && sessionList.get(userName).equals(session.getId());
