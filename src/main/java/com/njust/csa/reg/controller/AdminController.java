@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.sql.Timestamp;
 import java.util.HashMap;
@@ -23,6 +24,20 @@ public class AdminController {
     @Autowired
     public AdminController(AdminService adminService){
         this.adminService = adminService;
+    }
+
+    @RequestMapping(value = "/page/login", method = RequestMethod.GET)
+    public String getIndex(HttpServletRequest request, HttpSession session){
+        request.getSession().setAttribute("isRedirect", true);
+        return "/page/index.html";
+    }
+
+    @RequestMapping(value = "/page/activity/**", method = RequestMethod.GET)
+    public String checkIndex(HttpServletRequest request, HttpSession session){
+        if(checkUser(session)){
+            return "/page/index.html";
+        }
+        return "redirect:/page/login";
     }
 
     @ResponseBody
