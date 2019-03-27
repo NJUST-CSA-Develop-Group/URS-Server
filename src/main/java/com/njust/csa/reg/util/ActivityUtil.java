@@ -58,7 +58,10 @@ public class ActivityUtil {
 
         structureJson.put("name", tableStructure.getTitle());
         structureJson.put("type", tableStructure.getType());
-        if(isAdmin) structureJson.put("extension", tableStructure.getExtension());
+        if(isAdmin){
+            structureJson.put("extension", tableStructure.getExtension());
+            structureJson.put("unique", tableStructure.getIsUnique() != (byte) 0);
+        }
         structureJson.put("description", tableStructure.getDescription());
         structureJson.put("tip", tableStructure.getTips());
 

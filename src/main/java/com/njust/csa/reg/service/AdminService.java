@@ -193,7 +193,7 @@ public class AdminService {
             applicantInfoId.add(applicantInfoViewEntity.getId());
         }
 
-        int deleteNum = applicantInfoRepo.deleteAllByIdIn(applicantInfoId);
+        applicantInfoRepo.deleteAllByIdIn(applicantInfoId);
 
         responseJson.put("reason", "");
         return responseJson.toString();

@@ -26,20 +26,25 @@ public class AdminController {
         this.adminService = adminService;
     }
 
+    //重定向后的请求处理
     @RequestMapping(value = "/page/login", method = RequestMethod.GET)
-    public String getIndex(HttpServletRequest request, HttpSession session){
-        request.getSession().setAttribute("isRedirect", true);
+    public String getIndex(HttpServletRequest request){
+        request.getSession().setAttribute("isRedirect", true); //添加session信息，避免拦截器重复拦截
         return "/page/index.html";
     }
 
+    //处理管理端的所有静态请求
     @RequestMapping(value = "/page/activity/*", method = RequestMethod.GET)
-    public String checkIndex(HttpServletRequest request, HttpSession session){
+    public String checkIndex(HttpSession session){
+        //如果登录，则跳回主页面
         if(checkUser(session)){
             return "/page/index.html";
         }
+        //如果访问静态请求时没有登录，则重定向
         return "redirect:/page/login";
     }
 
+    //管理端登录
     @ResponseBody
     @RequestMapping(value = "/login", method = RequestMethod.POST,
             produces = "application/json;charset=UTF-8")
@@ -57,6 +62,7 @@ public class AdminController {
         }
     }
 
+    //管理端登出
     @ResponseBody
     @RequestMapping(value = "/logout", method = RequestMethod.GET,
             produces = "application/json;charset=UTF-8")
@@ -162,6 +168,7 @@ public class AdminController {
         else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
     }
 
+    //获取一个报名内的报名信息
     @ResponseBody
     @RequestMapping(value = "/admin/activity/{id}/applicant", method = RequestMethod.GET,
             produces = "application/json;charset=UTF-8")
@@ -172,6 +179,7 @@ public class AdminController {
         else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
     }
 
+    //删除指定的报名信息
     @ResponseBody
     @RequestMapping(value = "/admin/activity/{aid}/applicant/{iid}", method = RequestMethod.DELETE,
             produces = "application/json;charset=UTF-8")
@@ -182,6 +190,7 @@ public class AdminController {
         else return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
     }
 
+    //更新报名信息
     @ResponseBody
     @RequestMapping(value = "/admin/activity/{id}", method = RequestMethod.PUT,
             produces = "application/json;charset=UTF-8")
