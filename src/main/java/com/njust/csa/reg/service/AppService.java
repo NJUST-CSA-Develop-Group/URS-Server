@@ -8,6 +8,7 @@ import com.njust.csa.reg.repository.entities.ApplicantInfoEntity;
 import com.njust.csa.reg.repository.entities.TableInfoEntity;
 import com.njust.csa.reg.repository.entities.TableStructureEntity;
 import com.njust.csa.reg.repository.entities.UserEntity;
+import com.njust.csa.reg.util.ActivityUtil;
 import com.njust.csa.reg.util.FailureBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -15,59 +16,33 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class AppService {
-    private final TableInfoRepo tableInfoRepo;
+
     private final TableStructureRepo tableStructureRepo;
     private final ApplicantInfoRepo applicantInfoRepo;
-    private final UserRepo userRepo;
+
+    private final ActivityUtil activityUtil;
 
     @Autowired
-    public AppService(TableInfoRepo tableInfoRepo, TableStructureRepo tableStructureRepo,
-                      ApplicantInfoRepo applicantInfoRepo, UserRepo userRepo) {
-        this.tableInfoRepo = tableInfoRepo;
+    public AppService( TableStructureRepo tableStructureRepo,
+                      ApplicantInfoRepo applicantInfoRepo, ActivityUtil activityUtil) {
+
         this.tableStructureRepo = tableStructureRepo;
         this.applicantInfoRepo = applicantInfoRepo;
-        this.userRepo = userRepo;
+        this.activityUtil = activityUtil;
     }
 
     //获取所有报名信息
     public String getActivities() {
-        JSONArray responseJson = new JSONArray();
-        List<TableInfoEntity> tables = tableInfoRepo.findAllByStatus((byte)1);
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        for (TableInfoEntity table : tables) {
-            JSONObject tableJson = new JSONObject();
-            tableJson.put("id", table.getId());
-            tableJson.put("name", table.getTitle());
-
-            UserEntity publisher = userRepo.findById(table.getPublisher()).orElse(null);
-            tableJson.put("publisher", publisher == null ? "匿名" : publisher.getRealName());
-
-            if(table.getStartTime() != null) tableJson.put("startTime", dateFormat.format(table.getStartTime()));
-            if(table.getEndTime() != null) tableJson.put("endTime", dateFormat.format(table.getEndTime()));
-            responseJson.put(tableJson);
-        }
-
-        return responseJson.toString();
+        return activityUtil.getActivities(false).toString();
     }
 
     public String getActivityStructure(long id) {
-        JSONArray responseJson = new JSONArray();
-        if (id <= 0) {
-            return responseJson.toString();
-        }
-        List<TableStructureEntity> tableStructures = tableStructureRepo.findAllByTableIdAndBelongsToOrderByIndexNumber(id, null);
-        for (TableStructureEntity tableStructure : tableStructures) {
-            if(tableStructure.getIsShow() == (byte)1){
-                responseJson.put(generateTableStructure(tableStructure));
-            }
-        }
-        return responseJson.toString();
+        return activityUtil.generateActivityStructure(id, false).toString();
     }
 
     @Transactional
@@ -93,50 +68,6 @@ public class AppService {
             }
         }
         return new JSONObject().put("success", true).toString();
-    }
-
-    private JSONObject generateTableStructure(TableStructureEntity tableStructure) {
-        JSONObject structureJson = new JSONObject();
-        if (tableStructure.getType().equals("group")) {
-            JSONArray groupItemsJson = new JSONArray();
-            List<TableStructureEntity> groupItems = tableStructureRepo.findAllByBelongsToOrderByIndexNumber(tableStructure.getId());
-            for (TableStructureEntity groupItem : groupItems) {
-                if(tableStructure.getIsShow() == (byte)1){
-                    groupItemsJson.put(generateTableStructure(groupItem));
-                }
-            }
-            structureJson.put("subItem", groupItemsJson);
-        }
-
-        structureJson.put("name", tableStructure.getTitle());
-        structureJson.put("type", tableStructure.getType());
-        structureJson.put("description", tableStructure.getDescription());
-        structureJson.put("tip", tableStructure.getTips());
-
-        if(!tableStructure.getDefaultValue().equals(""))
-            structureJson.put("defaultValue", tableStructure.getDefaultValue());
-
-        structureJson.put("require", tableStructure.getIsRequired() == (byte)1);
-
-        if(!tableStructure.getCases().equals("")){
-            JSONArray casesJson = new JSONArray();
-            String[] cases = tableStructure.getCases().split(",");
-            for (String aCase : cases) {
-                casesJson.put(aCase);
-            }
-            structureJson.put("case", casesJson);
-        }
-
-        if(!tableStructure.getRanges().equals("")){
-            JSONArray rangeJson = new JSONArray();
-            String[] ranges = tableStructure.getRanges().split(",");
-            for (String range : ranges) {
-                rangeJson.put(range);
-            }
-            structureJson.put("range", rangeJson);
-        }
-
-        return structureJson;
     }
 
     private List<ApplicantInfoEntity> generateApplicantInfo(TableStructureEntity tableStructure, int applicantNum, JSONObject value)
