@@ -26,23 +26,23 @@ public class AdminController {
         this.adminService = adminService;
     }
 
-    //重定向后的请求处理
-    @RequestMapping(value = "/page/login", method = RequestMethod.GET)
-    public String getIndex(HttpServletRequest request){
-        request.getSession().setAttribute("isRedirect", true); //添加session信息，避免拦截器重复拦截
-        return "/page/index.html";
-    }
-
-    //处理管理端的所有静态请求
-    @RequestMapping(value = "/page/activity/*", method = RequestMethod.GET)
-    public String checkIndex(HttpSession session){
-        //如果登录，则跳回主页面
-        if(checkUser(session)){
-            return "/page/index.html";
-        }
-        //如果访问静态请求时没有登录，则重定向
-        return "redirect:/page/login";
-    }
+//    //重定向后的请求处理
+//    @RequestMapping(value = "/page/login", method = RequestMethod.GET)
+//    public String getIndex(HttpServletRequest request){
+//        request.getSession().setAttribute("isRedirect", true); //添加session信息，避免拦截器重复拦截
+//        return "/page/index.html";
+//    }
+//
+//    //处理管理端的所有静态请求
+//    @RequestMapping(value = "/page/activity/*", method = RequestMethod.GET)
+//    public String checkIndex(HttpSession session){
+//        //如果登录，则跳回主页面
+//        if(checkUser(session)){
+//            return "/page/index.html";
+//        }
+//        //如果访问静态请求时没有登录，则重定向
+//        return "redirect:/page/login";
+//    }
 
     //管理端登录
     @ResponseBody

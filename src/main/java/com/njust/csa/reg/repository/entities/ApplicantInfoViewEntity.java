@@ -4,7 +4,7 @@ import javax.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "applicant_info_view", schema = "test_reg_sys", catalog = "")
+@Table(name = "applicant_info_view", schema = "online_reg_sys", catalog = "")
 public class ApplicantInfoViewEntity {
     private int applicantNumber;
     private String value;
