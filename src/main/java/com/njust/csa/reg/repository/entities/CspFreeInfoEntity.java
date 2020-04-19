@@ -4,19 +4,33 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.Objects;
 
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
 @Entity
 @EntityListeners(AuditingEntityListener.class) //启动自动生成时间
-@Table(name = "csp_free_list", schema = "online_reg_sys", catalog = "")
-public class CspFreeListEntity {
+@Table(name = "csp_free_info", schema = "online_reg_sys", catalog = "")
+public class CspFreeInfoEntity {
+
     private long id;
+
     private Timestamp gmtCreate;
+
     private Timestamp gmtModified;
+
     private String schoolId;
+
     private int freeCount;
+
     private String reason;
 
     @Id
@@ -84,15 +98,15 @@ public class CspFreeListEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        CspFreeListEntity that = (CspFreeListEntity) o;
-        return id == that.id &&
-                freeCount == that.freeCount &&
-                Objects.equals(gmtCreate, that.gmtCreate) &&
-                Objects.equals(gmtModified, that.gmtModified) &&
-                Objects.equals(schoolId, that.schoolId) &&
-                Objects.equals(reason, that.reason);
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CspFreeInfoEntity that = (CspFreeInfoEntity) o;
+        return id == that.id && freeCount == that.freeCount && Objects.equals(gmtCreate, that.gmtCreate) &&
+            Objects.equals(gmtModified, that.gmtModified) && Objects.equals(schoolId, that.schoolId) && Objects.equals(reason, that.reason);
     }
 
     @Override
