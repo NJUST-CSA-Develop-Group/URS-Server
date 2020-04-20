@@ -4,6 +4,7 @@ import com.njust.csa.reg.model.dto.CheckAuditDTO;
 import com.njust.csa.reg.model.dto.CspAuditListDTO;
 import com.njust.csa.reg.model.dto.CspAuditStatusDTO;
 import com.njust.csa.reg.model.dto.CspFreeApplicantsDTO;
+import com.njust.csa.reg.model.dto.CspScoreUploadDTO;
 import com.njust.csa.reg.service.AdminService;
 import com.njust.csa.reg.service.CspService;
 import com.njust.csa.reg.util.AuditResult;
@@ -17,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -284,6 +286,16 @@ public class AdminController {
         if (checkUser(httpSession)) {
 
             return new ResponseEntity<>(cspService.getFreeApplicants(start, end), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @PostMapping("/admin/csp/score")
+    public ResponseEntity<String> uploadScore(HttpSession httpSession, CspScoreUploadDTO cspScoreUploadDTO) {
+        if (checkUser(httpSession)) {
+            cspService.uploadScore(cspScoreUploadDTO);
+            return new ResponseEntity<>(HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }

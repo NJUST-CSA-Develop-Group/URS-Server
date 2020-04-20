@@ -3,13 +3,18 @@ package com.njust.csa.reg.service;
 import com.njust.csa.reg.model.dto.CspAuditListDTO;
 import com.njust.csa.reg.model.dto.CspAuditStatusDTO;
 import com.njust.csa.reg.model.dto.CspFreeApplicantsDTO;
+import com.njust.csa.reg.model.dto.CspScoreUploadDTO;
 import com.njust.csa.reg.model.dto.StudentCspFreeInfoDTO;
 import com.njust.csa.reg.model.dto.StudentFreeAuditsInfoDTO;
 import com.njust.csa.reg.model.dto.StudentInfoDTO;
 import com.njust.csa.reg.repository.docker.CspAuditRepo;
+import com.njust.csa.reg.repository.docker.CspCertificationInfoRepo;
+import com.njust.csa.reg.repository.docker.CspCertificationScoreRepo;
 import com.njust.csa.reg.repository.docker.CspFreeApplicantRepo;
 import com.njust.csa.reg.repository.docker.CspFreeInfoRepo;
 import com.njust.csa.reg.repository.entities.CspAuditEntity;
+import com.njust.csa.reg.repository.entities.CspCertificationInfoEntity;
+import com.njust.csa.reg.repository.entities.CspCertificationScoreEntity;
 import com.njust.csa.reg.repository.entities.CspFreeApplicantEntity;
 import com.njust.csa.reg.repository.entities.CspFreeInfoEntity;
 import com.njust.csa.reg.util.AuditResult;
@@ -25,6 +30,7 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,8 +50,15 @@ public class CspService {
 
     private final CspFreeApplicantRepo cspFreeApplicantRepo;
 
+    private final CspCertificationInfoRepo cspCertificationInfoRepo;
+
+    private final CspCertificationScoreRepo cspCertificationScoreRepo;
+
     public CspService(CspFreeInfoRepo cspFreeInfoRepo, CspAuditRepo cspAuditRepo, CampAccessor campAccessor,
-        CspFreeApplicantRepo cspFreeApplicantRepo) {
+        CspFreeApplicantRepo cspFreeApplicantRepo, CspCertificationScoreRepo cspCertificationScoreRepo,
+        CspCertificationInfoRepo cspCertificationInfoRepo) {
+        this.cspCertificationInfoRepo = cspCertificationInfoRepo;
+        this.cspCertificationScoreRepo = cspCertificationScoreRepo;
         this.cspFreeApplicantRepo = cspFreeApplicantRepo;
         this.cspAuditRepo = cspAuditRepo;
         this.cspFreeInfoRepo = cspFreeInfoRepo;
@@ -203,6 +216,55 @@ public class CspService {
             dataBeanList.add(dataBean);
         }
         return cspFreeApplicantsDTO;
+    }
+
+    @Transactional
+    public void uploadScore(CspScoreUploadDTO scoreUploadDTO) {
+        String[] passScoreStrings = scoreUploadDTO.getPassScore().split(";");
+        Map<String, Integer> passScoreMap = new HashMap<>();
+        for (String passScoreString : passScoreStrings) {
+            String[] passScoreKeyValue = passScoreString.split(":");
+            passScoreMap.put(passScoreKeyValue[0], Integer.parseInt(passScoreKeyValue[1]));
+        }
+
+        CspCertificationInfoEntity cspCertificationInfoEntity = new CspCertificationInfoEntity();
+        cspCertificationInfoEntity.setName(scoreUploadDTO.getName());
+        cspCertificationInfoEntity.setPassScore(scoreUploadDTO.getPassScore());
+        cspCertificationInfoRepo.save(cspCertificationInfoEntity);
+
+        for (CspScoreUploadDTO.ScoreDataBean scoreDatum : scoreUploadDTO.getScoreData()) {
+            CspCertificationScoreEntity cspCertificationScoreEntity = new CspCertificationScoreEntity();
+            cspCertificationScoreEntity.setSchoolId(scoreDatum.getSchoolId());
+            cspCertificationScoreEntity.setCertificationId(cspCertificationInfoEntity.getId());
+            boolean free = true;
+            StringBuilder scoreString = new StringBuilder();
+
+            scoreString.append("totalScore:").append(scoreDatum.getTotalScore()).append(";");
+            if (Integer.parseInt(scoreDatum.getTotalScore()) < passScoreMap.get("totalScore")) {
+                free = false;
+            }
+            for (int i = 0; i < scoreDatum.getScore().size(); i++) {
+                if (free && passScoreMap.get(String.valueOf(i)) > scoreDatum.getScore().get(i)) {
+                    free = false;
+                }
+                scoreString.append(i).append(":").append(scoreDatum.getScore().get(i)).append(";");
+            }
+
+            cspCertificationScoreEntity.setIsFree(free ? (byte) 1 : (byte) 0);
+            cspCertificationScoreEntity.setScores(scoreString.toString());
+            cspCertificationScoreRepo.save(cspCertificationScoreEntity);
+
+            if (free) {
+                CspFreeInfoEntity freeInfoEntity = cspFreeInfoRepo.findBySchoolId(scoreDatum.getSchoolId());
+                if (freeInfoEntity == null) {
+                    freeInfoEntity = new CspFreeInfoEntity();
+                    freeInfoEntity.setFreeCount(0);
+                }
+                freeInfoEntity.setFreeCount(freeInfoEntity.getFreeCount() + 1);
+                freeInfoEntity.setReason(freeInfoEntity.getReason() + scoreUploadDTO.getName() + ";");
+                cspFreeInfoRepo.save(freeInfoEntity);
+            }
+        }
     }
 
     @Transactional
