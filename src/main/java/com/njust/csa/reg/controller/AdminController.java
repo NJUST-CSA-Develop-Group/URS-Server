@@ -217,6 +217,13 @@ public class AdminController {
         }
     }
 
+    /**
+     * 修改当前申请状态
+     * @param cspAuditStatusDTO the csp audit status dto
+     * @param httpSession the http session
+     * @return the response entity
+     * @throws FailureException the failure exception
+     */
     @PutMapping("/admin/csp/audit")
     public ResponseEntity<String> changeAuditStatus(@RequestBody CspAuditStatusDTO cspAuditStatusDTO, HttpSession httpSession)
         throws FailureException {

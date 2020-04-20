@@ -4,12 +4,14 @@ import com.njust.csa.reg.model.dto.CspAuditListDTO;
 import com.njust.csa.reg.model.dto.CspAuditStatusDTO;
 import com.njust.csa.reg.model.dto.StudentCspFreeInfoDTO;
 import com.njust.csa.reg.model.dto.StudentFreeAuditsInfoDTO;
+import com.njust.csa.reg.model.dto.StudentInfoDTO;
 import com.njust.csa.reg.repository.docker.CspAuditRepo;
 import com.njust.csa.reg.repository.docker.CspFreeInfoRepo;
 import com.njust.csa.reg.repository.entities.CspAuditEntity;
 import com.njust.csa.reg.repository.entities.CspFreeInfoEntity;
 import com.njust.csa.reg.util.AuditResult;
 import com.njust.csa.reg.util.AuditStatus;
+import com.njust.csa.reg.util.CampAccessor;
 import com.njust.csa.reg.util.FailureException;
 
 import org.springframework.data.domain.Page;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.transaction.Transactional;
@@ -32,9 +35,12 @@ public class CspService {
 
     private final CspAuditRepo cspAuditRepo;
 
-    public CspService(CspFreeInfoRepo cspFreeInfoRepo, CspAuditRepo cspAuditRepo) {
+    private final CampAccessor campAccessor;
+
+    public CspService(CspFreeInfoRepo cspFreeInfoRepo, CspAuditRepo cspAuditRepo, CampAccessor campAccessor) {
         this.cspAuditRepo = cspAuditRepo;
         this.cspFreeInfoRepo = cspFreeInfoRepo;
+        this.campAccessor = campAccessor;
     }
 
     public CspAuditStatusDTO getAuditStatus() {
@@ -95,7 +101,7 @@ public class CspService {
         IS_AUDIT_OPEN = "STATUS_OPEN".equals(s);
     }
 
-    public CspAuditListDTO getAuditList(int pageNum, int pageSize, AuditStatus auditStatus) {
+    public CspAuditListDTO getAuditList(int pageNum, int pageSize, AuditStatus auditStatus) throws FailureException {
         Page<CspAuditEntity> cspAuditEntityPage;
         if (auditStatus == null) {
             cspAuditEntityPage = cspAuditRepo.findAll(PageRequest.of(pageNum - 1, pageSize));
@@ -109,8 +115,9 @@ public class CspService {
         for (CspAuditEntity cspAuditEntity : cspAuditEntityPage) {
             CspAuditListDTO.DataBean dataBean = new CspAuditListDTO.DataBean();
             dataBean.setId(String.valueOf(cspAuditEntity.getId()));
-            //TODO 与CAMP对接
-            //grade name
+            Map<String, StudentInfoDTO> studentInfoDTOMap = campAccessor.getStudentBasicInfo(dataBean.getSchoolId());
+            dataBean.setName(studentInfoDTOMap.get(cspAuditEntity.getSchoolId()).getName());
+            dataBean.setGrade(studentInfoDTOMap.get(cspAuditEntity.getSchoolId()).getGrade());
             dataBean.setSchoolId(cspAuditEntity.getSchoolId());
             dataBean.setReason(cspAuditEntity.getReason());
             dataBean.setStatus(AuditStatus.valueOf(cspAuditEntity.getStatus()).getDescription());
