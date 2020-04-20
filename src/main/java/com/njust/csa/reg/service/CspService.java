@@ -219,7 +219,7 @@ public class CspService {
     }
 
     @Transactional
-    public void uploadScore(CspScoreUploadDTO scoreUploadDTO) {
+    public void uploadScore(CspScoreUploadDTO scoreUploadDTO) throws FailureException {
         String[] passScoreStrings = scoreUploadDTO.getPassScore().split(";");
         Map<String, Integer> passScoreMap = new HashMap<>();
         for (String passScoreString : passScoreStrings) {
@@ -227,6 +227,9 @@ public class CspService {
             passScoreMap.put(passScoreKeyValue[0], Integer.parseInt(passScoreKeyValue[1]));
         }
 
+        if (cspCertificationInfoRepo.existsByName(scoreUploadDTO.getName())) {
+            throw new FailureException(HttpStatus.CONFLICT, "名称已存在：" + scoreUploadDTO.getName());
+        }
         CspCertificationInfoEntity cspCertificationInfoEntity = new CspCertificationInfoEntity();
         cspCertificationInfoEntity.setName(scoreUploadDTO.getName());
         cspCertificationInfoEntity.setPassScore(scoreUploadDTO.getPassScore());
@@ -239,12 +242,12 @@ public class CspService {
             boolean free = true;
             StringBuilder scoreString = new StringBuilder();
 
-            scoreString.append("totalScore:").append(scoreDatum.getTotalScore()).append(";");
-            if (Integer.parseInt(scoreDatum.getTotalScore()) < passScoreMap.get("totalScore")) {
+            scoreString.append("total:").append(scoreDatum.getTotalScore()).append(";");
+            if (Integer.parseInt(scoreDatum.getTotalScore()) < passScoreMap.get("total")) {
                 free = false;
             }
             for (int i = 0; i < scoreDatum.getScore().size(); i++) {
-                if (free && passScoreMap.get(String.valueOf(i)) > scoreDatum.getScore().get(i)) {
+                if (free && passScoreMap.get(String.valueOf(i)) != null && passScoreMap.get(String.valueOf(i)) > scoreDatum.getScore().get(i)) {
                     free = false;
                 }
                 scoreString.append(i).append(":").append(scoreDatum.getScore().get(i)).append(";");
@@ -259,9 +262,11 @@ public class CspService {
                 if (freeInfoEntity == null) {
                     freeInfoEntity = new CspFreeInfoEntity();
                     freeInfoEntity.setFreeCount(0);
+                    freeInfoEntity.setSchoolId(scoreDatum.getSchoolId());
                 }
                 freeInfoEntity.setFreeCount(freeInfoEntity.getFreeCount() + 1);
-                freeInfoEntity.setReason(freeInfoEntity.getReason() + scoreUploadDTO.getName() + ";");
+                freeInfoEntity.setReason(
+                    freeInfoEntity.getReason() == null ? "" + scoreUploadDTO.getName() + ";" : freeInfoEntity.getReason() + scoreUploadDTO.getName());
                 cspFreeInfoRepo.save(freeInfoEntity);
             }
         }

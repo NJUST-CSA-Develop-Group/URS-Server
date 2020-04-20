@@ -27,7 +27,7 @@ public class CspController {
         this.cspService = cspService;
     }
 
-    @GetMapping("/status")
+    @GetMapping("/audit/status")
     public ResponseEntity<CspAuditStatusDTO> getAuditStatus() {
         return new ResponseEntity<>(cspService.getAuditStatus(), HttpStatus.OK);
     }

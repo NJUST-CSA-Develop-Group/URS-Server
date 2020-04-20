@@ -242,7 +242,7 @@ public class AdminController {
         }
     }
 
-    @GetMapping("/admin/csp/audit/{pageNum}")
+    @GetMapping("/admin/csp/audit/list/{pageNum}")
     public ResponseEntity<CspAuditListDTO> getAuditList(@PathVariable int pageNum, @RequestParam(required = false, defaultValue = "10") int pageSize,
         @RequestParam(required = false, defaultValue = "STATUS_UNCHECK") String status, HttpSession httpSession) throws FailureException {
         if (checkUser(httpSession)) {
@@ -292,7 +292,7 @@ public class AdminController {
     }
 
     @PostMapping("/admin/csp/score")
-    public ResponseEntity<String> uploadScore(HttpSession httpSession, CspScoreUploadDTO cspScoreUploadDTO) {
+    public ResponseEntity<String> uploadScore(HttpSession httpSession, @RequestBody CspScoreUploadDTO cspScoreUploadDTO) throws FailureException {
         if (checkUser(httpSession)) {
             cspService.uploadScore(cspScoreUploadDTO);
             return new ResponseEntity<>(HttpStatus.OK);

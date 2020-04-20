@@ -6,4 +6,6 @@ import org.springframework.data.repository.CrudRepository;
 
 public interface CspCertificationInfoRepo extends CrudRepository<CspCertificationInfoEntity, Long> {
 
+    boolean existsByName(String name);
+
 }
