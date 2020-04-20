@@ -6,8 +6,10 @@ import com.njust.csa.reg.model.dto.StudentCspFreeInfoDTO;
 import com.njust.csa.reg.model.dto.StudentFreeAuditsInfoDTO;
 import com.njust.csa.reg.model.dto.StudentInfoDTO;
 import com.njust.csa.reg.repository.docker.CspAuditRepo;
+import com.njust.csa.reg.repository.docker.CspFreeApplicantRepo;
 import com.njust.csa.reg.repository.docker.CspFreeInfoRepo;
 import com.njust.csa.reg.repository.entities.CspAuditEntity;
+import com.njust.csa.reg.repository.entities.CspFreeApplicantEntity;
 import com.njust.csa.reg.repository.entities.CspFreeInfoEntity;
 import com.njust.csa.reg.util.AuditResult;
 import com.njust.csa.reg.util.AuditStatus;
@@ -18,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +40,11 @@ public class CspService {
 
     private final CampAccessor campAccessor;
 
-    public CspService(CspFreeInfoRepo cspFreeInfoRepo, CspAuditRepo cspAuditRepo, CampAccessor campAccessor) {
+    private final CspFreeApplicantRepo cspFreeApplicantRepo;
+
+    public CspService(CspFreeInfoRepo cspFreeInfoRepo, CspAuditRepo cspAuditRepo, CampAccessor campAccessor,
+        CspFreeApplicantRepo cspFreeApplicantRepo) {
+        this.cspFreeApplicantRepo = cspFreeApplicantRepo;
         this.cspAuditRepo = cspAuditRepo;
         this.cspFreeInfoRepo = cspFreeInfoRepo;
         this.campAccessor = campAccessor;
@@ -70,10 +77,36 @@ public class CspService {
     }
 
     @Transactional
-    public void submitAudit(String schoolId, String reason) {
+    public void submitAudit(String schoolId, String reason) throws FailureException {
+
         CspAuditEntity cspAuditEntity = new CspAuditEntity();
         cspAuditEntity.setReason(reason);
         cspAuditEntity.setSchoolId(schoolId);
+
+        AuditStatus auditStatus = AuditStatus.STATUS_UNCHECK;
+
+        CspFreeInfoEntity cspFreeInfoEntity = cspFreeInfoRepo.findBySchoolId(schoolId);
+        if (cspFreeInfoEntity != null) {
+            if (cspFreeInfoEntity.getFreeCount() >= 1) {
+                cspFreeInfoEntity.setFreeCount(cspFreeInfoEntity.getFreeCount() - 1);
+                int index = cspFreeInfoEntity.getReason().indexOf(";");
+                String useString = cspFreeInfoEntity.getReason().substring(0, index);
+                String reasonString = cspFreeInfoEntity.getReason().substring(index + 1);
+                cspFreeInfoEntity.setReason(reasonString);
+                cspFreeInfoRepo.save(cspFreeInfoEntity);
+                try {
+                    addStudentInfoApplicant(cspAuditEntity);
+                } catch (FailureException failureException) {
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                    throw failureException;
+                }
+                auditStatus = AuditStatus.STATUS_PERMIT;
+                cspAuditEntity.setComment("系统自动通过，使用免费资格：" + useString);
+            }
+            cspAuditEntity.setStatus(auditStatus.toString());
+            cspAuditRepo.save(cspAuditEntity);
+        }
+
         cspAuditEntity.setStatus(AuditStatus.STATUS_UNCHECK.toString());
         cspAuditRepo.save(cspAuditEntity);
     }
@@ -138,11 +171,28 @@ public class CspService {
         }
         if (auditResult == AuditResult.AUDIT_PERMIT) {
             cspAuditEntity.setStatus(AuditStatus.STATUS_PERMIT.toString());
+            try {
+                addStudentInfoApplicant(cspAuditEntity);
+            } catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                throw e;
+            }
         } else {
             cspAuditEntity.setStatus(AuditStatus.STATUS_REJECT.toString());
         }
         cspAuditEntity.setComment(comment);
         cspAuditRepo.save(cspAuditEntity);
+    }
+
+    @Transactional
+    public void addStudentInfoApplicant(CspAuditEntity cspAuditEntity) throws FailureException {
+        CspFreeApplicantEntity cspFreeApplicantEntity = new CspFreeApplicantEntity();
+        StudentInfoDTO studentInfoDTO = campAccessor.getStudentBasicInfo(cspAuditEntity.getSchoolId()).get(cspAuditEntity.getSchoolId());
+        cspFreeApplicantEntity.setSchoolId(cspAuditEntity.getSchoolId());
+        cspFreeApplicantEntity.setName(studentInfoDTO.getName());
+        cspFreeApplicantEntity.setGrade(studentInfoDTO.getGrade());
+
+        cspFreeApplicantRepo.save(cspFreeApplicantEntity);
     }
 
 }
