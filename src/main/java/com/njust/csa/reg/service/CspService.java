@@ -2,6 +2,7 @@ package com.njust.csa.reg.service;
 
 import com.njust.csa.reg.model.dto.CspAuditListDTO;
 import com.njust.csa.reg.model.dto.CspAuditStatusDTO;
+import com.njust.csa.reg.model.dto.CspFreeApplicantsDTO;
 import com.njust.csa.reg.model.dto.StudentCspFreeInfoDTO;
 import com.njust.csa.reg.model.dto.StudentFreeAuditsInfoDTO;
 import com.njust.csa.reg.model.dto.StudentInfoDTO;
@@ -22,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -182,6 +184,25 @@ public class CspService {
         }
         cspAuditEntity.setComment(comment);
         cspAuditRepo.save(cspAuditEntity);
+    }
+
+    public CspFreeApplicantsDTO getFreeApplicants(Timestamp start, Timestamp end) throws FailureException {
+        CspFreeApplicantsDTO cspFreeApplicantsDTO = new CspFreeApplicantsDTO();
+        List<CspFreeApplicantEntity> cspFreeApplicantEntityList = cspFreeApplicantRepo.findAllByGmtCreateBetween(start, end);
+        cspFreeApplicantsDTO.setCount(cspFreeApplicantEntityList.size());
+        List<CspFreeApplicantsDTO.DataBean> dataBeanList = new ArrayList<>();
+        cspFreeApplicantsDTO.setData(dataBeanList);
+        for (CspFreeApplicantEntity cspFreeApplicantEntity : cspFreeApplicantEntityList) {
+            CspFreeApplicantsDTO.DataBean dataBean = new CspFreeApplicantsDTO.DataBean();
+            StudentInfoDTO studentInfoDTO = campAccessor.getStudentBasicInfo(cspFreeApplicantEntity.getSchoolId())
+                .get(cspFreeApplicantEntity.getSchoolId());
+            dataBean.setName(studentInfoDTO.getName());
+            dataBean.setSchoolId(cspFreeApplicantEntity.getSchoolId());
+            dataBean.setGrade(studentInfoDTO.getGrade());
+            dataBean.setSubmitTime(cspFreeApplicantEntity.getGmtCreate());
+            dataBeanList.add(dataBean);
+        }
+        return cspFreeApplicantsDTO;
     }
 
     @Transactional

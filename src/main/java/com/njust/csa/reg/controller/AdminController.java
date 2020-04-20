@@ -3,6 +3,7 @@ package com.njust.csa.reg.controller;
 import com.njust.csa.reg.model.dto.CheckAuditDTO;
 import com.njust.csa.reg.model.dto.CspAuditListDTO;
 import com.njust.csa.reg.model.dto.CspAuditStatusDTO;
+import com.njust.csa.reg.model.dto.CspFreeApplicantsDTO;
 import com.njust.csa.reg.service.AdminService;
 import com.njust.csa.reg.service.CspService;
 import com.njust.csa.reg.util.AuditResult;
@@ -272,6 +273,17 @@ public class AdminController {
             }
             cspService.checkResult(auditId, auditResult, comment);
             return new ResponseEntity<>(HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @GetMapping("/admin/csp/free")
+    public ResponseEntity<CspFreeApplicantsDTO> getFreeApplicants(HttpSession httpSession, @RequestParam Timestamp start, @RequestParam Timestamp end)
+        throws FailureException {
+        if (checkUser(httpSession)) {
+
+            return new ResponseEntity<>(cspService.getFreeApplicants(start, end), HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
